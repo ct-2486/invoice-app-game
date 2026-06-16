@@ -84,34 +84,30 @@ transition: 0.2s;
 <p style="margin-top:0;">你是臺北市稅捐稽徵處信義分處的<span style="color:#0ff; font-weight:bold;">雲端飛碟</span>！<br>
 在信義區的數位世界裡，邊看著101美景，邊收集重要功能吧！</p>
 <p>📌 左右鍵（或 A/D 鍵）控制飛碟左右移動<br>
-📌 碰綠色功能 = <span style="color:#4caf50; font-weight:bold;">+10 分</span><br>
-📌 碰紅色紙本發票怪 = <span style="color:#e53935; font-weight:bold;">-15 分</span><br>
+📌 碰綠色新APP功能= <span style="color:#4caf50; font-weight:bold;">+10 分</span><br>
+📌 碰紅色紙本發票怪= <span style="color:#e53935; font-weight:bold;">-15 分</span><br>
 📌 60 秒內收集到全部 8 個功能 = 成功過關！</p>
 </div>
 <button onclick="startGame()">開始遊戲</button>
 </div>
 
 <div id="endScreen" style="display:none;position:fixed;inset:0;background:rgba(5,10,20,.95);z-index:4000;text-align:center;color:white;justify-content:center;align-items:center;flex-direction:column;">
-    <div style="font-size:70px;margin-bottom:10px;">🎉</div>
+    <div id="endIcon" style="font-size:70px;margin-bottom:10px;">🎉</div>
     <h1 id="endTitle" style="font-size:52px;color:#FFD54F;margin:10px 0;">恭喜過關！</h1>
     <h2 style="font-size:36px;margin:15px 0;">總分： <span id="finalScore" style="color:#0ff;">0</span></h2>
-    <p id="collectedList" style="font-size:24px;max-width:680px;line-height:1.8;margin:20px 0;">
-        您已成功蒐集新版APP功能<br>
-        📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理<br>
-        🎁 活動捐贈｜☁️ 自動領獎｜📍 領獎地圖<br>
-        🔔 智慧通知｜📱 桌面小工具
-    </p>
+    
+    <div id="collectedList" style="font-size:22px;max-width:750px;line-height:1.8;margin:20px 0;background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;border:1px solid rgba(255,255,255,0.1);">
+    </div>
+    
     <h3 style="color:#FFD54F;font-size:28px;margin:25px 0;">立即下載新版統一發票兌獎APP</h3>
     
     <div style="display:flex;gap:25px;margin-top:5px; margin-bottom: 25px;">
         <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank"
            style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
-            
             <span>App Store 下載</span>
         </a>
-        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329"
+        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329" target="_blank"
            style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
-            
             <span>Google Play 下載</span>
         </a>
     </div>
@@ -173,13 +169,13 @@ watermark.style.position = 'absolute';
 watermark.style.top = '30px';
 watermark.style.left = '50%';
 watermark.style.transform = 'translateX(-50%)';
-watermark.style.color = 'rgba(255, 255, 255, 0.28)'; // 細緻的半透明白
+watermark.style.color = 'rgba(255, 255, 255, 0.28)';
 watermark.style.fontSize = '32px';
 watermark.style.fontWeight = 'bold';
 watermark.style.zIndex = '10';
 watermark.style.letterSpacing = '4px';
 watermark.style.textShadow = '0 2px 8px rgba(0,0,0,0.5)';
-watermark.style.pointerEvents = 'none'; // 防止阻擋滑鼠點擊
+watermark.style.pointerEvents = 'none';
 watermark.textContent = '臺北市稅捐稽徵處 信義分處';
 game.appendChild(watermark);
 
@@ -189,104 +185,63 @@ let audioCtx = null;
 let bgmInterval = null;
 let bgmStep = 0;
 
-// 初始化音訊環境
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
 }
 
-// 播放短音效通用函式
 function playSound(freqs, duration, type = "sine", gainStart = 0.1) {
     if (!audioCtx) return;
     try {
         let osc = audioCtx.createOscillator();
         let gainNode = audioCtx.createGain();
         osc.type = type;
-        
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
         let now = audioCtx.currentTime;
         gainNode.gain.setValueAtTime(gainStart, now);
         gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
-        
         if (freqs.length === 1) {
             osc.frequency.setValueAtTime(freqs[0], now);
         } else {
-            // 頻率滑音效果
             osc.frequency.setValueAtTime(freqs[0], now);
             for(let i = 1; i < freqs.length; i++){
                 osc.frequency.exponentialRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1))));
             }
         }
-        
         osc.start(now);
         osc.stop(now + duration);
     } catch (e) { console.log(e); }
 }
 
-// 1. 吃到好東西音效（啵嗶～）
-function playScoreSound() {
-    playSound([523.25, 880], 0.15, "triangle", 0.15);
-}
-
-// 2. 撞到怪物音效（咚波波波波..）
-function playMonsterSound() {
-    playSound([180, 80], 0.25, "sawtooth", 0.2);
-}
-
-// 3. 完美過關音效（勝利大和弦）
+function playScoreSound() { playSound([523.25, 880], 0.15, "triangle", 0.15); }
+function playMonsterSound() { playSound([180, 80], 0.25, "sawtooth", 0.2); }
 function playWinSound() {
     if(!audioCtx) return;
-    let notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-    notes.forEach((f, i) => {
-        setTimeout(() => {
-            playSound([f, f * 1.2], 0.6, "sine", 0.1);
-        }, i * 100);
-    });
+    let notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((f, i) => { setTimeout(() => { playSound([f, f * 1.2], 0.6, "sine", 0.1); }, i * 100); });
 }
+function playLoseSound() { playSound([300, 150, 100], 0.6, "sawtooth", 0.2); }
 
-// 4. 失敗音效（喔嗚..）
-function playLoseSound() {
-    playSound([300, 150, 100], 0.6, "sawtooth", 0.2);
-}
-
-// 5. 輕快電子背景音樂 (BGM) 循環器
 function startBGM() {
     stopBGM();
-    // 簡單的 8-Bit 科技感旋律小節 (C大調/A小調五聲)
     const melody = [
         440, 493, 523, 587, 659, 587, 523, 493,
         440, 523, 659, 783, 880, 783, 659, 523,
         587, 587, 659, 783, 880, 880, 987, 1046,
         880, 783, 659, 587, 523, 493, 440, 392
     ];
-    
     bgmStep = 0;
     bgmInterval = setInterval(() => {
-        if (!gameStarted) {
-            stopBGM();
-            return;
-        }
-        // 每四拍放一下低音，其他放輕微主旋律
+        if (!gameStarted) { stopBGM(); return; }
         let f = melody[bgmStep % melody.length];
-        if (bgmStep % 4 === 0) {
-            // 輕微的低音貝斯襯底
-            playSound([f / 4, f / 4], 0.2, "triangle", 0.06);
-        }
-        // 主旋律
+        if (bgmStep % 4 === 0) { playSound([f / 4, f / 4], 0.2, "triangle", 0.06); }
         playSound([f, f], 0.12, "sine", 0.03);
         bgmStep++;
-    }, 200); // 拍頻率
+    }, 200);
 }
-
-function stopBGM() {
-    if (bgmInterval) {
-        clearInterval(bgmInterval);
-        bgmInterval = null;
-    }
-}
+function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
 
 
 // ==================== 遊戲控制邏輯 ====================
@@ -304,7 +259,7 @@ document.addEventListener("keydown", e => {
 });
 
 function startGame(){
-    initAudio(); // 啟動瀏覽器音訊
+    initAudio();
     startScreen.style.display = "none";
     endScreen.style.display = "none";
     score = 0;
@@ -318,7 +273,7 @@ function startGame(){
     timerText.textContent = time + " 秒";
     gameStarted = true;
     
-    startBGM(); // 播放背景音樂
+    startBGM();
     
     clearInterval(gameInterval);
     clearInterval(spawnInterval);
@@ -383,7 +338,7 @@ function updateGame(){
                 score += 10;
                 collectedFeatures.add(obj.icon);
                 showTicker("收集到功能：" + obj.name + " ➕10");
-                playScoreSound(); // 播放加分音效
+                playScoreSound();
                 
                 if(collectedFeatures.size === 8){
                     endGame(true);
@@ -391,7 +346,7 @@ function updateGame(){
             } else {
                 score = Math.max(0, score - 15);
                 showTicker("撞到紙本發票怪！ ➖15");
-                playMonsterSound(); // 播放扣分音效
+                playMonsterSound();
             }
             scoreText.textContent = "分數：" + score;
             obj.el.remove();
@@ -413,24 +368,63 @@ function showTicker(txt){
 
 function endGame(isWin){
     gameStarted = false;
-    stopBGM(); // 停止背景音樂
+    stopBGM();
     clearInterval(gameInterval);
     clearInterval(spawnInterval);
     
     document.getElementById("finalScore").textContent = score;
+    const endIcon = document.getElementById("endIcon");
     const title = document.getElementById("endTitle");
     const list = document.getElementById("collectedList");
     
     if(isWin){
+        endIcon.textContent = "🎉";
         title.textContent = "恭喜完美過關！";
         title.style.color = "#FFD54F";
-        list.innerHTML = `您在時限內成功集滿新版APP全部 8 個功能！<br>📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理<br>🎁 活動捐贈｜☁️ 自動領獎｜📍 領獎地圖<br>🔔 智慧通知｜📱 桌面小工具`;
-        playWinSound(); // 播放勝利音效
+        list.innerHTML = `
+            <div style="color:#4caf50; font-weight:bold; margin-bottom:10px;">🌟 成功集滿新版APP全部 8 個功能！</div>
+            <div style="font-size:20px;">📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理｜🎁 活動捐贈<br>☁️ 自動領獎｜📍 領獎地圖｜🔔 智慧通知｜📱 桌面小工具</div>
+        `;
+        playWinSound();
     } else {
+        endIcon.textContent = "⏰";
         title.textContent = "時間到！挑戰失敗";
         title.style.color = "#ff5722";
-        list.innerHTML = `可惜沒能在 60 秒內集滿所有雲端功能。<br>目前共收集了 <b>${collectedFeatures.size} / 8</b> 種功能。`;
-        playLoseSound(); // 播放失敗音效
+        
+        // 分門別類篩選已蒐集與未蒐集
+        let successArr = [];
+        let failArr = [];
+        
+        featureIcons.forEach(icon => {
+            if(collectedFeatures.has(icon)){
+                successArr.push(`${icon} ${featureNames[icon]}`);
+            } else {
+                failArr.push(`${icon} ${featureNames[icon]}`);
+            }
+        });
+        
+        let htmlContent = `<div style="margin-bottom:12px;">可惜沒能在 60 秒內集滿所有功能（目前共收集了 <b>${collectedFeatures.size} / 8</b> 種）。</div>`;
+        
+        // 渲染已蒐集清單
+        htmlContent += `<div style="text-align:left; margin-bottom:10px;"><span style="color:#4caf50; font-weight:bold;">已蒐集的功能：</span>`;
+        if(successArr.length > 0) {
+            htmlContent += `<span style="font-size:18px; color:#e0e0e0;">${successArr.join(' ｜ ')}</span>`;
+        } else {
+            htmlContent += `<span style="font-size:18px; color:#aaa; font-style:italic;">無</span>`;
+        }
+        htmlContent += `</div>`;
+        
+        // 渲染未蒐集清單
+        htmlContent += `<div style="text-align:left;"><span style="color:#ff5722; font-weight:bold;">未蒐集的功能：</span>`;
+        if(failArr.length > 0) {
+            htmlContent += `<span style="font-size:18px; color:#ffb74d;">${failArr.join(' ｜ ')}</span>`;
+        } else {
+            htmlContent += `<span style="font-size:18px; color:#aaa; font-style:italic;">無</span>`;
+        }
+        htmlContent += `</div>`;
+        
+        list.innerHTML = htmlContent;
+        playLoseSound();
     }
     
     endScreen.style.display = "flex";
