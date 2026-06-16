@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -102,7 +102,7 @@ transition: 0.2s;
         🔔 智慧通知｜📱 桌面小工具
     </p>
     <h3 style="color:#FFD54F;font-size:28px;margin:25px 0;">立即下載新版統一發票兌獎APP</h3>
-   
+    
     <div style="display:flex;gap:25px;margin-top:5px; margin-bottom: 25px;">
         <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank"
            style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
@@ -115,7 +115,7 @@ transition: 0.2s;
             <span>Google Play 下載</span>
         </a>
     </div>
-   
+    
     <button onclick="restartGame()" style="background:#1976d2;color:white;border:none;padding:15px 60px;font-size:28px;border-radius:30px;cursor:pointer;box-shadow:0 10px 30px rgba(0,252,254,.4);">重新挑戰</button>
 </div>
 
@@ -183,6 +183,112 @@ watermark.style.pointerEvents = 'none'; // 防止阻擋滑鼠點擊
 watermark.textContent = '臺北市稅捐稽徵處 信義分處';
 game.appendChild(watermark);
 
+
+// ==================== 🎵 Web Audio API 音效與音樂引擎 ====================
+let audioCtx = null;
+let bgmInterval = null;
+let bgmStep = 0;
+
+// 初始化音訊環境
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+// 播放短音效通用函式
+function playSound(freqs, duration, type = "sine", gainStart = 0.1) {
+    if (!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        osc.type = type;
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        let now = audioCtx.currentTime;
+        gainNode.gain.setValueAtTime(gainStart, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+        
+        if (freqs.length === 1) {
+            osc.frequency.setValueAtTime(freqs[0], now);
+        } else {
+            // 頻率滑音效果
+            osc.frequency.setValueAtTime(freqs[0], now);
+            for(let i = 1; i < freqs.length; i++){
+                osc.frequency.exponentialRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1))));
+            }
+        }
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    } catch (e) { console.log(e); }
+}
+
+// 1. 吃到好東西音效（啵嗶～）
+function playScoreSound() {
+    playSound([523.25, 880], 0.15, "triangle", 0.15);
+}
+
+// 2. 撞到怪物音效（咚波波波波..）
+function playMonsterSound() {
+    playSound([180, 80], 0.25, "sawtooth", 0.2);
+}
+
+// 3. 完美過關音效（勝利大和弦）
+function playWinSound() {
+    if(!audioCtx) return;
+    let notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((f, i) => {
+        setTimeout(() => {
+            playSound([f, f * 1.2], 0.6, "sine", 0.1);
+        }, i * 100);
+    });
+}
+
+// 4. 失敗音效（喔嗚..）
+function playLoseSound() {
+    playSound([300, 150, 100], 0.6, "sawtooth", 0.2);
+}
+
+// 5. 輕快電子背景音樂 (BGM) 循環器
+function startBGM() {
+    stopBGM();
+    // 簡單的 8-Bit 科技感旋律小節 (C大調/A小調五聲)
+    const melody = [
+        440, 493, 523, 587, 659, 587, 523, 493,
+        440, 523, 659, 783, 880, 783, 659, 523,
+        587, 587, 659, 783, 880, 880, 987, 1046,
+        880, 783, 659, 587, 523, 493, 440, 392
+    ];
+    
+    bgmStep = 0;
+    bgmInterval = setInterval(() => {
+        if (!gameStarted) {
+            stopBGM();
+            return;
+        }
+        // 每四拍放一下低音，其他放輕微主旋律
+        let f = melody[bgmStep % melody.length];
+        if (bgmStep % 4 === 0) {
+            // 輕微的低音貝斯襯底
+            playSound([f / 4, f / 4], 0.2, "triangle", 0.06);
+        }
+        // 主旋律
+        playSound([f, f], 0.12, "sine", 0.03);
+        bgmStep++;
+    }, 200); // 拍頻率
+}
+
+function stopBGM() {
+    if (bgmInterval) {
+        clearInterval(bgmInterval);
+        bgmInterval = null;
+    }
+}
+
+
 // ==================== 遊戲控制邏輯 ====================
 function movePlayer(){
     player.style.left = playerX + "px";
@@ -198,6 +304,7 @@ document.addEventListener("keydown", e => {
 });
 
 function startGame(){
+    initAudio(); // 啟動瀏覽器音訊
     startScreen.style.display = "none";
     endScreen.style.display = "none";
     score = 0;
@@ -210,6 +317,8 @@ function startGame(){
     scoreText.textContent = "分數：" + score;
     timerText.textContent = time + " 秒";
     gameStarted = true;
+    
+    startBGM(); // 播放背景音樂
     
     clearInterval(gameInterval);
     clearInterval(spawnInterval);
@@ -274,6 +383,7 @@ function updateGame(){
                 score += 10;
                 collectedFeatures.add(obj.icon);
                 showTicker("收集到功能：" + obj.name + " ➕10");
+                playScoreSound(); // 播放加分音效
                 
                 if(collectedFeatures.size === 8){
                     endGame(true);
@@ -281,6 +391,7 @@ function updateGame(){
             } else {
                 score = Math.max(0, score - 15);
                 showTicker("撞到紙本發票怪！ ➖15");
+                playMonsterSound(); // 播放扣分音效
             }
             scoreText.textContent = "分數：" + score;
             obj.el.remove();
@@ -302,6 +413,7 @@ function showTicker(txt){
 
 function endGame(isWin){
     gameStarted = false;
+    stopBGM(); // 停止背景音樂
     clearInterval(gameInterval);
     clearInterval(spawnInterval);
     
@@ -313,10 +425,12 @@ function endGame(isWin){
         title.textContent = "恭喜完美過關！";
         title.style.color = "#FFD54F";
         list.innerHTML = `您在時限內成功集滿新版APP全部 8 個功能！<br>📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理<br>🎁 活動捐贈｜☁️ 自動領獎｜📍 領獎地圖<br>🔔 智慧通知｜📱 桌面小工具`;
+        playWinSound(); // 播放勝利音效
     } else {
         title.textContent = "時間到！挑戰失敗";
         title.style.color = "#ff5722";
         list.innerHTML = `可惜沒能在 60 秒內集滿所有雲端功能。<br>目前共收集了 <b>${collectedFeatures.size} / 8</b> 種功能。`;
+        playLoseSound(); // 播放失敗音效
     }
     
     endScreen.style.display = "flex";
