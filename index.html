@@ -1,0 +1,331 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信義區雲端發票冒險島</title>
+<style>
+body{
+margin:0;overflow:hidden;font-family:"Microsoft JhengHei";
+/* 將你提供的美麗插畫設為背景，並加上深色遮罩提升上方文字可讀性 */
+background: linear-gradient(rgba(10, 15, 30, 0.3), rgba(4, 9, 20, 0.65)), url('image.png') center bottom/cover no-repeat fixed;
+color: #fff;
+}
+#overlay{position:fixed;inset:0;background:rgba(255,255,255,.02); pointer-events: none;}
+#game{position:relative;width:100vw;height:100vh;overflow:hidden;}
+
+/* 分數與時間 UI 微調，加上半透明背景融入插畫風格 */
+#score,#timer{
+position:absolute;top:20px;z-index:1000;background:rgba(255,255,255,0.9);color:#000;
+padding:10px 20px;border-radius:15px;font-size:28px;font-weight:bold;
+box-shadow: 0 4px 15px rgba(0,255,255,0.4);
+}
+#score{left:20px;} #timer{right:20px;}
+
+#player{
+position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+width:150px;height:150px;
+display:flex;align-items:center;justify-content:center;
+z-index:500;
+transition: left 0.05s ease-out;
+}
+.item,.monster{
+position:absolute;width:90px;height:90px;border-radius:22px;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+z-index:300;box-sizing:border-box;
+}
+.item{
+background:rgba(255,255,255,0.95);color:#000;border:4px solid #1976d2;
+box-shadow:0 8px 20px rgba(0,242,254,.6);
+}
+.item .icon { font-size: 38px; }
+.item .text { font-size: 13px; font-weight: bold; color: #1976d2; margin-top: 2px; }
+
+.monster{
+background:rgba(255, 221, 221, 0.95);color:#000;border:4px solid #c62828;
+box-shadow:0 8px 20px rgba(255,0,0,.5);
+}
+.monster .icon { font-size: 38px; }
+.monster .text { font-size: 13px; font-weight: bold; color: #c62828; margin-top: 2px; }
+
+#message{
+position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);
+background:rgba(0,0,0,.88);color:white;padding:15px 35px;
+border-radius:20px;display:none;text-align:center;z-index:2000;max-width:600px;
+font-size: 26px; border: 2px solid #0ff; pointer-events: none;
+}
+#startScreen{
+position:fixed;inset:0;background:rgba(10,15,30,.92);z-index:3000;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+text-align:center;color:white;transition:all .5s;
+}
+#startScreen h1{font-size:48px;margin-bottom:20px;color:#FFD54F;text-shadow: 0 0 20px rgba(255,213,79,0.4);}
+#startScreen button{
+background:#1976d2;color:white;border:none;padding:18px 50px;font-size:28px;
+border-radius:30px;cursor:pointer;margin-top:30px;box-shadow:0 10px 30px rgba(0,242,254,.4);
+transition: 0.2s;
+}
+#startScreen button:hover{transform:scale(1.1);background:#00f2fe;}
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div id="game">
+<div id="score">分數：0</div>
+<div id="timer">60 秒</div>
+<div id="player">🛸</div>
+<div id="message"></div>
+</div>
+
+<div id="startScreen">
+<h1 style="font-size:56px;margin-bottom:15px;color:#FFD54F;">信義區雲端發票冒險島</h1>
+<h2 style="font-size:32px;margin:10px 0 30px 0;color:#fff;">蒐集新版統一發票兌獎APP的8個重要功能</h2>
+<div style="font-size:24px;max-width:700px;line-height:1.7; background:rgba(255,255,255,0.08); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
+<p style="margin-top:0;">你是臺北市稅捐稽徵處信義分處的<span style="color:#0ff; font-weight:bold;">雲端飛碟</span>！<br>
+在信義區的數位世界裡，邊看著101美景，邊收集重要功能吧！</p>
+<p>📌 左右鍵（或 A/D 鍵）控制飛碟左右移動<br>
+📌 碰綠色功能 = <span style="color:#4caf50; font-weight:bold;">+10 分</span><br>
+📌 碰紅色紙本發票怪 = <span style="color:#e53935; font-weight:bold;">-15 分</span><br>
+📌 60 秒內收集到全部 8 個功能 = 成功過關！</p>
+</div>
+<button onclick="startGame()">開始遊戲</button>
+</div>
+
+<div id="endScreen" style="display:none;position:fixed;inset:0;background:rgba(5,10,20,.95);z-index:4000;text-align:center;color:white;justify-content:center;align-items:center;flex-direction:column;">
+    <div style="font-size:70px;margin-bottom:10px;">🎉</div>
+    <h1 id="endTitle" style="font-size:52px;color:#FFD54F;margin:10px 0;">恭喜過關！</h1>
+    <h2 style="font-size:36px;margin:15px 0;">總分： <span id="finalScore" style="color:#0ff;">0</span></h2>
+    <p id="collectedList" style="font-size:24px;max-width:680px;line-height:1.8;margin:20px 0;">
+        您已成功蒐集新版APP功能<br>
+        📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理<br>
+        🎁 活動捐贈｜☁️ 自動領獎｜📍 領獎地圖<br>
+        🔔 智慧通知｜📱 桌面小工具
+    </p>
+    <h3 style="color:#FFD54F;font-size:28px;margin:25px 0;">立即下載新版統一發票兌獎APP</h3>
+   
+    <div style="display:flex;gap:25px;margin-top:5px; margin-bottom: 25px;">
+        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank"
+           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
+            
+            <span>App Store 下載</span>
+        </a>
+        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329"
+           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
+            
+            <span>Google Play 下載</span>
+        </a>
+    </div>
+   
+    <button onclick="restartGame()" style="background:#1976d2;color:white;border:none;padding:15px 60px;font-size:28px;border-radius:30px;cursor:pointer;box-shadow:0 10px 30px rgba(0,252,254,.4);">重新挑戰</button>
+</div>
+
+<script>
+const game=document.getElementById("game");
+const player=document.getElementById("player");
+const scoreText=document.getElementById("score");
+const timerText=document.getElementById("timer");
+const message=document.getElementById("message");
+const startScreen=document.getElementById("startScreen");
+const endScreen=document.getElementById("endScreen");
+
+let score=0, time=60, playerX=window.innerWidth/2 - 75;
+let gameStarted=false;
+let gameInterval, spawnInterval;
+let fallingObjects = [];
+let collectedFeatures = new Set();
+
+const featureIcons=["📊","🌱","💳","🎁","☁️","📍","🔔","📱"];
+const featureNames={
+"📊":"消費分析","🌱":"減碳存摺","💳":"會員卡管理","🎁":"活動捐贈",
+"☁️":"自動領獎","📍":"領獎地圖","🔔":"智慧通知","📱":"桌面小工具"
+};
+
+// ==================== 全新超科幻立體飛碟 (UFO) UI ====================
+player.innerHTML = `
+    <div style="width:150px;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;">
+        <div style="position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:16px;color:#fff;text-shadow:0 0 10px #0ff, 0 0 20px #0ff;font-weight:bold;white-space:nowrap;letter-spacing:2px;z-index:10;">稅務飛碟</div>
+        <div class="ufo-body" style="width:140px;height:70px;position:relative;animation:float 2s ease-in-out infinite; margin-top:20px;">
+            <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:56px;height:35px;background:rgba(0, 242, 254, 0.4);border:3px solid #0ff;border-radius:50% 50% 0 0;box-shadow:inset 0 5px 15px rgba(255,255,255,0.6), 0 0 20px rgba(0,242,254,0.5);z-index:3;"></div>
+            <div style="position:absolute;top:22px;left:0;width:140px;height:40px;background:linear-gradient(180deg, #434343 0%, #1a1a1a 100%);border-radius:50%;border:4px solid #555;box-shadow:0 8px 15px rgba(0,0,0,0.5);z-index:2;display:flex;align-items:center;justify-content:space-around;padding:0 15px;box-sizing:border-box;">
+                <div class="ufo-light" style="width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff;"></div>
+                <div class="ufo-light" style="width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff;animation-delay:0.2s;"></div>
+                <div class="ufo-light" style="width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff;animation-delay:0.4s;"></div>
+                <div class="ufo-light" style="width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff;animation-delay:0.6s;"></div>
+            </div>
+            <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:45px;height:12px;background:#0ff;border-radius:50%;z-index:1;box-shadow:0 0 20px #0ff, 0 0 40px #0ff;"></div>
+            <div class="tractor-beam" style="position:absolute;top:55px;left:50%;transform:translateX(-50%);width:60px;height:55px;background:linear-gradient(180deg, rgba(0,255,255,0.4) 0%, rgba(0,255,255,0) 100%);clip-path:polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);z-index:0;animation:pulse 1s ease-in-out infinite alternate;"></div>
+        </div>
+    </div>
+`;
+
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+@keyframes pulse { 0% { opacity: 0.3; transform: translateX(-50%) scaleX(0.9); } 100% { opacity: 0.7; transform: translateX(-50%) scaleX(1.1); } }
+@keyframes blink { 0%, 100% { background: #ff0055; box-shadow: 0 0 12px #ff0055; } 33% { background: #00ff66; box-shadow: 0 0 12px #00ff66; } 66% { background: #00ffff; box-shadow: 0 0 12px #00ffff; } }
+.ufo-light { animation: blink 1.2s infinite; }
+`;
+document.head.appendChild(style);
+
+// ==================== 🛠️ 畫面中央高質感半透明浮水印 ====================
+const watermark = document.createElement('div');
+watermark.style.position = 'absolute';
+watermark.style.top = '30px';
+watermark.style.left = '50%';
+watermark.style.transform = 'translateX(-50%)';
+watermark.style.color = 'rgba(255, 255, 255, 0.28)'; // 細緻的半透明白
+watermark.style.fontSize = '32px';
+watermark.style.fontWeight = 'bold';
+watermark.style.zIndex = '10';
+watermark.style.letterSpacing = '4px';
+watermark.style.textShadow = '0 2px 8px rgba(0,0,0,0.5)';
+watermark.style.pointerEvents = 'none'; // 防止阻擋滑鼠點擊
+watermark.textContent = '臺北市稅捐稽徵處 信義分處';
+game.appendChild(watermark);
+
+// ==================== 遊戲控制邏輯 ====================
+function movePlayer(){
+    player.style.left = playerX + "px";
+}
+movePlayer();
+
+document.addEventListener("keydown", e => {
+    if(!gameStarted) return;
+    if(e.key === "ArrowLeft" || e.key.toLowerCase() === "a") playerX -= 50;
+    if(e.key === "ArrowRight" || e.key.toLowerCase() === "d") playerX += 50;
+    playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
+    movePlayer();
+});
+
+function startGame(){
+    startScreen.style.display = "none";
+    endScreen.style.display = "none";
+    score = 0;
+    time = 60;
+    collectedFeatures.clear();
+    
+    fallingObjects.forEach(obj => obj.el.remove());
+    fallingObjects = [];
+    
+    scoreText.textContent = "分數：" + score;
+    timerText.textContent = time + " 秒";
+    gameStarted = true;
+    
+    clearInterval(gameInterval);
+    clearInterval(spawnInterval);
+    
+    gameInterval = setInterval(updateGame, 30);
+    spawnInterval = setInterval(() => {
+        time--;
+        timerText.textContent = time + " 秒";
+        if(time <= 0) {
+            endGame(false);
+            return;
+        }
+        if(Math.random() < 0.5) {
+            createFeature();
+        } else {
+            createMonster();
+        }
+    }, 1000);
+}
+
+function createFeature(){
+    let div = document.createElement("div");
+    div.className = "item";
+    let icon = featureIcons[Math.floor(Math.random() * featureIcons.length)];
+    let name = featureNames[icon];
+    div.innerHTML = `<span class="icon">${icon}</span><span class="text">${name}</span>`;
+    
+    let x = Math.random() * (window.innerWidth - 100);
+    div.style.left = x + "px";
+    div.style.top = "-100px";
+    game.appendChild(div);
+    
+    fallingObjects.push({ el: div, x: x, y: -100, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 });
+}
+
+function createMonster(){
+    let div = document.createElement("div");
+    div.className = "monster";
+    div.innerHTML = `<span class="icon">🧾</span><span class="text">紙本怪</span>`;
+    
+    let x = Math.random() * (window.innerWidth - 100);
+    div.style.left = x + "px";
+    div.style.top = "-100px";
+    game.appendChild(div);
+    
+    fallingObjects.push({ el: div, x: x, y: -100, type: "bad", speed: 5 + Math.random() * 4 });
+}
+
+function updateGame(){
+    let nextObjects = [];
+    let playerLeft = playerX;
+    let playerRight = playerX + 150;
+    let pTop = window.innerHeight - 170; 
+    
+    for(let i = 0; i < fallingObjects.length; i++){
+        let obj = fallingObjects[i];
+        obj.y += obj.speed;
+        obj.el.style.top = obj.y + "px";
+        
+        if(obj.y + 90 >= pTop && obj.y <= window.innerHeight - 50 && obj.x + 90 >= playerLeft && obj.x <= playerRight){
+            if(obj.type === "good"){
+                score += 10;
+                collectedFeatures.add(obj.icon);
+                showTicker("收集到功能：" + obj.name + " ➕10");
+                
+                if(collectedFeatures.size === 8){
+                    endGame(true);
+                }
+            } else {
+                score = Math.max(0, score - 15);
+                showTicker("撞到紙本發票怪！ ➖15");
+            }
+            scoreText.textContent = "分數：" + score;
+            obj.el.remove();
+        } else if(obj.y > window.innerHeight){
+            obj.el.remove();
+        } else {
+            nextObjects.push(obj);
+        }
+    }
+    fallingObjects = nextObjects;
+}
+
+function showTicker(txt){
+    message.textContent = txt;
+    message.style.display = "block";
+    clearTimeout(message.timer);
+    message.timer = setTimeout(() => { message.style.display = "none"; }, 1000);
+}
+
+function endGame(isWin){
+    gameStarted = false;
+    clearInterval(gameInterval);
+    clearInterval(spawnInterval);
+    
+    document.getElementById("finalScore").textContent = score;
+    const title = document.getElementById("endTitle");
+    const list = document.getElementById("collectedList");
+    
+    if(isWin){
+        title.textContent = "恭喜完美過關！";
+        title.style.color = "#FFD54F";
+        list.innerHTML = `您在時限內成功集滿新版APP全部 8 個功能！<br>📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理<br>🎁 活動捐贈｜☁️ 自動領獎｜📍 領獎地圖<br>🔔 智慧通知｜📱 桌面小工具`;
+    } else {
+        title.textContent = "時間到！挑戰失敗";
+        title.style.color = "#ff5722";
+        list.innerHTML = `可惜沒能在 60 秒內集滿所有雲端功能。<br>目前共收集了 <b>${collectedFeatures.size} / 8</b> 種功能。`;
+    }
+    
+    endScreen.style.display = "flex";
+}
+
+function restartGame(){
+    endScreen.style.display = "none";
+    startGame();
+}
+</script>
+</body>
+</html>
