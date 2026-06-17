@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>信義區雲端發票冒險島</title>
 <style>
 body{
@@ -10,62 +10,128 @@ margin:0;overflow:hidden;font-family:"Microsoft JhengHei";
 /* 將你提供的美麗插畫設為背景，並加上深色遮罩提升上方文字可讀性 */
 background: linear-gradient(rgba(10, 15, 30, 0.3), rgba(4, 9, 20, 0.65)), url('image.png') center bottom/cover no-repeat fixed;
 color: #fff;
+/* 防止行動裝置上滑動時畫面晃動或縮放 */
+position: fixed;
+width: 100%;
+height: 100%;
+touch-action: none;
+-webkit-user-select: none;
+user-select: none;
 }
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,.02); pointer-events: none;}
 #game{position:relative;width:100vw;height:100vh;overflow:hidden;}
 
-/* 分數與時間 UI 微調，加上半透明背景融入插畫風格 */
+/* 分數與時間 UI 調整成 RWD 自適應大小 */
 #score,#timer{
-position:absolute;top:20px;z-index:1000;background:rgba(255,255,255,0.9);color:#000;
-padding:10px 20px;border-radius:15px;font-size:28px;font-weight:bold;
+position:absolute;top:15px;z-index:1000;background:rgba(255,255,255,0.9);color:#000;
+padding:8px 15px;border-radius:12px;font-size:20px;font-weight:bold;
 box-shadow: 0 4px 15px rgba(0,255,255,0.4);
 }
-#score{left:20px;} #timer{right:20px;}
+@media(min-width: 768px) {
+    #score,#timer { font-size: 28px; padding: 10px 20px; border-radius: 15px; top: 20px; }
+}
+#score{left:15px;} #timer{right:15px;}
 
+/* 飛碟大小與基本定位 */
 #player{
 position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
 width:150px;height:150px;
 display:flex;align-items:center;justify-content:center;
 z-index:500;
-transition: left 0.05s ease-out;
+transition: left 0.02s linear; /* 縮短時間讓手把反應更即時 */
+cursor: grab;
 }
+#player:active { cursor: grabbing; }
+
+/* 掉落物大小調整，手機版縮小更適合點擊與躲避 */
 .item,.monster{
-position:absolute;width:90px;height:90px;border-radius:22px;
+position:absolute;width:75px;height:75px;border-radius:18px;
 display:flex;flex-direction:column;align-items:center;justify-content:center;
 z-index:300;box-sizing:border-box;
 }
+@media(min-width: 768px) {
+    .item,.monster { width: 90px; height: 90px; border-radius: 22px; }
+}
 .item{
-background:rgba(255,255,255,0.95);color:#000;border:4px solid #1976d2;
+background:rgba(255,255,255,0.95);color:#000;border:3px solid #1976d2;
 box-shadow:0 8px 20px rgba(0,242,254,.6);
 }
-.item .icon { font-size: 38px; }
-.item .text { font-size: 13px; font-weight: bold; color: #1976d2; margin-top: 2px; }
+.item .icon { font-size: 30px; }
+.item .text { font-size: 11px; font-weight: bold; color: #1976d2; margin-top: 1px; }
+
+@media(min-width: 768px) {
+    .item .icon { font-size: 38px; }
+    .item .text { font-size: 13px; margin-top: 2px; }
+}
 
 .monster{
-background:rgba(255, 221, 221, 0.95);color:#000;border:4px solid #c62828;
+background:rgba(255, 221, 221, 0.95);color:#000;border:3px solid #c62828;
 box-shadow:0 8px 20px rgba(255,0,0,.5);
 }
-.monster .icon { font-size: 38px; }
-.monster .text { font-size: 13px; font-weight: bold; color: #c62828; margin-top: 2px; }
+.monster .icon { font-size: 30px; }
+.monster .text { font-size: 11px; font-weight: bold; color: #c62828; margin-top: 1px; }
+
+@media(min-width: 768px) {
+    .monster .icon { font-size: 38px; }
+    .monster .text { font-size: 13px; margin-top: 2px; }
+}
 
 #message{
 position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);
-background:rgba(0,0,0,.88);color:white;padding:15px 35px;
-border-radius:20px;display:none;text-align:center;z-index:2000;max-width:600px;
-font-size: 26px; border: 2px solid #0ff; pointer-events: none;
+background:rgba(0,0,0,.88);color:white;padding:12px 25px;
+border-radius:15px;display:none;text-align:center;z-index:2000;width:80%;max-width:600px;
+font-size: 20px; border: 2px solid #0ff; pointer-events: none;
 }
+@media(min-width: 768px) {
+    #message { font-size: 26px; padding: 15px 35px; border-radius: 20px; }
+}
+
+/* 開始畫面自適應 */
 #startScreen{
 position:fixed;inset:0;background:rgba(10,15,30,.92);z-index:3000;
 display:flex;flex-direction:column;align-items:center;justify-content:center;
-text-align:center;color:white;transition:all .5s;
+text-align:center;color:white;transition:all .5s;padding: 20px;box-sizing: border-box;
 }
-#startScreen h1{font-size:48px;margin-bottom:20px;color:#FFD54F;text-shadow: 0 0 20px rgba(255,213,79,0.4);}
+#startScreen h1{font-size:32px;margin-bottom:10px;color:#FFD54F;text-shadow: 0 0 20px rgba(255,213,79,0.4);}
+#startScreen h2{font-size:20px;margin:5px 0 20px 0;color:#fff;}
+#startScreen .intro-box{font-size:14px;max-width:700px;line-height:1.5; background:rgba(255,255,255,0.08); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); text-align: left;}
 #startScreen button{
-background:#1976d2;color:white;border:none;padding:18px 50px;font-size:28px;
-border-radius:30px;cursor:pointer;margin-top:30px;box-shadow:0 10px 30px rgba(0,242,254,.4);
+background:#1976d2;color:white;border:none;padding:12px 40px;font-size:22px;
+border-radius:25px;cursor:pointer;margin-top:20px;box-shadow:0 10px 30px rgba(0,242,254,.4);
 transition: 0.2s;
 }
+@media(min-width: 768px) {
+    #startScreen h1 { font-size: 56px; }
+    #startScreen h2 { font-size: 32px; margin: 10px 0 30px 0; }
+    #startScreen .intro-box { font-size: 20px; padding: 25px; border-radius: 20px; }
+    #startScreen button { padding: 18px 50px; font-size: 28px; border-radius: 30px; margin-top: 30px; }
+}
 #startScreen button:hover{transform:scale(1.1);background:#00f2fe;}
+
+/* 結束畫面自適應 */
+#endScreen{
+position:fixed;inset:0;background:rgba(5,10,20,.95);z-index:4000;text-align:center;color:white;
+justify-content:center;align-items:center;flex-direction:column;padding: 20px;box-sizing: border-box;
+}
+#endScreen h1{font-size:36px;color:#FFD54F;margin:5px 0;}
+#endScreen h2{font-size:26px;margin:10px 0;}
+#endScreen h3{color:#FFD54F;font-size:20px;margin:15px 0;}
+#endScreen button{background:#1976d2;color:white;border:none;padding:12px 40px;font-size:22px;border-radius:25px;cursor:pointer;box-shadow:0 10px 30px rgba(0,252,254,.4);}
+@media(min-width: 768px) {
+    #endScreen h1 { font-size: 52px; margin: 10px 0; }
+    #endScreen h2 { font-size: 36px; margin: 15px 0; }
+    #endScreen h3 { font-size: 28px; margin: 25px 0; }
+    #endScreen button { padding: 15px 60px; font-size: 28px; border-radius: 30px; }
+}
+
+/* 提示控制器連線狀態 */
+#gamepadPrompt {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #64b5f6;
+    font-weight: bold;
+    animation: pulse 1.5s infinite alternate;
+}
 </style>
 </head>
 <body>
@@ -78,41 +144,43 @@ transition: 0.2s;
 </div>
 
 <div id="startScreen">
-<h1 style="font-size:56px;margin-bottom:15px;color:#FFD54F;">信義區雲端發票冒險島</h1>
-<h2 style="font-size:32px;margin:10px 0 30px 0;color:#fff;">蒐集新版統一發票兌獎APP的8個重要功能</h2>
-<div style="font-size:24px;max-width:700px;line-height:1.7; background:rgba(255,255,255,0.08); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
-<p style="margin-top:0;">你是臺北市稅捐稽徵處信義分處的<span style="color:#0ff; font-weight:bold;">雲端飛碟</span>！<br>
+<h1 id="mainTitle">信義區雲端發票冒險島</h1>
+<h2>蒐集新版統一發票兌獎APP的8個重要功能</h2>
+<div class="intro-box">
+<p style="margin-top:0; text-align: center;">你是臺北市稅捐稽徵處信義分處的<span style="color:#0ff; font-weight:bold;">雲端飛碟</span>！<br>
 在信義區的數位世界裡，邊看著101美景，邊收集重要功能吧！</p>
-<p>📌 左右鍵（或 A/D 鍵）控制飛碟左右移動<br>
-📌 碰綠色新APP功能= <span style="color:#4caf50; font-weight:bold;">+10 分</span><br>
-📌 碰紅色紙本發票怪= <span style="color:#e53935; font-weight:bold;">-15 分</span><br>
+<p>🎮 <b>Xbox / PS 控制器</b>：左類比搖桿或十字鍵左右移動，【A / ✖】鍵開始<br>
+📌 <b>手機/平板觸控</b>：用手指在螢幕左右拖曳飛碟移動<br>
+📌 <b>電腦桌機鍵盤</b>：左右鍵（或 A/D 鍵）控制左右移動<br>
+📌 碰綠色功能 = <span style="color:#4caf50; font-weight:bold;">+10 分</span>，碰紅色紙本發票怪 = <span style="color:#e53935; font-weight:bold;">-15 分</span><br>
 📌 60 秒內收集到全部 8 個功能 = 成功過關！</p>
 </div>
+<div id="gamepadPrompt">🎮 偵測到控制器？請按手把任意鍵連線...</div>
 <button onclick="startGame()">開始遊戲</button>
 </div>
 
-<div id="endScreen" style="display:none;position:fixed;inset:0;background:rgba(5,10,20,.95);z-index:4000;text-align:center;color:white;justify-content:center;align-items:center;flex-direction:column;">
-    <div id="endIcon" style="font-size:70px;margin-bottom:10px;">🎉</div>
-    <h1 id="endTitle" style="font-size:52px;color:#FFD54F;margin:10px 0;">恭喜過關！</h1>
-    <h2 style="font-size:36px;margin:15px 0;">總分： <span id="finalScore" style="color:#0ff;">0</span></h2>
+<div id="endScreen" style="display:none;">
+    <div id="endIcon" style="font-size:50px;margin-bottom:5px;">🎉</div>
+    <h1 id="endTitle">恭喜過關！</h1>
+    <h2>總分： <span id="finalScore" style="color:#0ff;">0</span></h2>
     
-    <div id="collectedList" style="font-size:22px;max-width:750px;line-height:1.8;margin:20px 0;background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;border:1px solid rgba(255,255,255,0.1);">
+    <div id="collectedList" style="font-size:16px; width:100%; max-width:750px; line-height:1.6; margin:15px 0; background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;">
     </div>
     
-    <h3 style="color:#FFD54F;font-size:28px;margin:25px 0;">立即下載新版統一發票兌獎APP</h3>
+    <h3>立即下載新版統一發票兌獎APP</h3>
     
-    <div style="display:flex;gap:25px;margin-top:5px; margin-bottom: 25px;">
+    <div style="display:flex; flex-wrap: wrap; justify-content: center; gap:15px; margin-top:5px; margin-bottom: 20px;">
         <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank"
-           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
+           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
             <span>App Store 下載</span>
         </a>
         <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329" target="_blank"
-           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:12px 22px;border-radius:15px;font-size:20px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
+           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
             <span>Google Play 下載</span>
         </a>
     </div>
     
-    <button onclick="restartGame()" style="background:#1976d2;color:white;border:none;padding:15px 60px;font-size:28px;border-radius:30px;cursor:pointer;box-shadow:0 10px 30px rgba(0,252,254,.4);">重新挑戰</button>
+    <button onclick="restartGame()">重新挑戰</button>
 </div>
 
 <script>
@@ -123,6 +191,7 @@ const timerText=document.getElementById("timer");
 const message=document.getElementById("message");
 const startScreen=document.getElementById("startScreen");
 const endScreen=document.getElementById("endScreen");
+const gamepadPrompt=document.getElementById("gamepadPrompt");
 
 let score=0, time=60, playerX=window.innerWidth/2 - 75;
 let gameStarted=false;
@@ -135,6 +204,8 @@ const featureNames={
 "📊":"消費分析","🌱":"減碳存摺","💳":"會員卡管理","🎁":"活動捐贈",
 "☁️":"自動領獎","📍":"領獎地圖","🔔":"智慧通知","📱":"桌面小工具"
 };
+
+function getObjWidth() { return window.innerWidth >= 768 ? 90 : 75; }
 
 // ==================== 全新超科幻立體飛碟 (UFO) UI ====================
 player.innerHTML = `
@@ -166,16 +237,17 @@ document.head.appendChild(style);
 // ==================== 🛠️ 畫面中央高質感半透明浮水印 ====================
 const watermark = document.createElement('div');
 watermark.style.position = 'absolute';
-watermark.style.top = '30px';
+watermark.style.top = '75px';
 watermark.style.left = '50%';
 watermark.style.transform = 'translateX(-50%)';
-watermark.style.color = 'rgba(255, 255, 255, 0.28)';
-watermark.style.fontSize = '32px';
+watermark.style.color = 'rgba(255, 255, 255, 0.25)';
+watermark.style.fontSize = '20px';
 watermark.style.fontWeight = 'bold';
 watermark.style.zIndex = '10';
-watermark.style.letterSpacing = '4px';
+watermark.style.letterSpacing = '2px';
 watermark.style.textShadow = '0 2px 8px rgba(0,0,0,0.5)';
 watermark.style.pointerEvents = 'none';
+watermark.style.whiteSpace = 'nowrap';
 watermark.textContent = '臺北市稅捐稽徵處 信義分處';
 game.appendChild(watermark);
 
@@ -185,43 +257,26 @@ let audioCtx = null;
 let bgmInterval = null;
 let bgmStep = 0;
 
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-}
-
+function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
 function playSound(freqs, duration, type = "sine", gainStart = 0.1) {
     if (!audioCtx) return;
     try {
         let osc = audioCtx.createOscillator();
         let gainNode = audioCtx.createGain();
-        osc.type = type;
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+        osc.type = type; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
         let now = audioCtx.currentTime;
-        gainNode.gain.setValueAtTime(gainStart, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
-        if (freqs.length === 1) {
+        gainNode.gain.setValueAtTime(gainStart, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+        if (freqs.length === 1) { osc.frequency.setValueAtTime(freqs[0], now); }
+        else {
             osc.frequency.setValueAtTime(freqs[0], now);
-        } else {
-            osc.frequency.setValueAtTime(freqs[0], now);
-            for(let i = 1; i < freqs.length; i++){
-                osc.frequency.exponentialRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1))));
-            }
+            for(let i = 1; i < freqs.length; i++){ osc.frequency.exponentialRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1)))); }
         }
-        osc.start(now);
-        osc.stop(now + duration);
+        osc.start(now); osc.stop(now + duration);
     } catch (e) { console.log(e); }
 }
-
 function playScoreSound() { playSound([523.25, 880], 0.15, "triangle", 0.15); }
 function playMonsterSound() { playSound([180, 80], 0.25, "sawtooth", 0.2); }
-function playWinSound() {
-    if(!audioCtx) return;
-    let notes = [523.25, 659.25, 783.99, 1046.50];
-    notes.forEach((f, i) => { setTimeout(() => { playSound([f, f * 1.2], 0.6, "sine", 0.1); }, i * 100); });
-}
+function playWinSound() { if(!audioCtx) return; let notes = [523.25, 659.25, 783.99, 1046.50]; notes.forEach((f, i) => { setTimeout(() => { playSound([f, f * 1.2], 0.6, "sine", 0.1); }, i * 100); }); }
 function playLoseSound() { playSound([300, 150, 100], 0.6, "sawtooth", 0.2); }
 
 function startBGM() {
@@ -244,12 +299,12 @@ function startBGM() {
 function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
 
 
-// ==================== 遊戲控制邏輯 ====================
-function movePlayer(){
-    player.style.left = playerX + "px";
-}
+// ==================== 🎮 控制輸入整合（鍵盤、觸控、手把） ====================
+function movePlayer(){ player.style.left = playerX + "px"; }
+playerX = window.innerWidth / 2 - 75;
 movePlayer();
 
+// 1. 鍵盤事件
 document.addEventListener("keydown", e => {
     if(!gameStarted) return;
     if(e.key === "ArrowLeft" || e.key.toLowerCase() === "a") playerX -= 50;
@@ -258,21 +313,99 @@ document.addEventListener("keydown", e => {
     movePlayer();
 });
 
+// 2. 觸控與滑鼠拖曳
+let isDragging = false;
+function handleMove(clientX) {
+    if (!gameStarted) return;
+    playerX = clientX - 75;
+    playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
+    movePlayer();
+}
+game.addEventListener("touchstart", e => { isDragging = true; handleMove(e.touches[0].clientX); }, {passive: true});
+game.addEventListener("touchmove", e => { if(isDragging) handleMove(e.touches[0].clientX); }, {passive: true});
+game.addEventListener("touchend", () => { isDragging = false; });
+game.addEventListener("mousedown", e => { isDragging = true; handleMove(e.clientX); });
+game.addEventListener("mousemove", e => { if(isDragging) handleMove(e.clientX); });
+document.addEventListener("mouseup", () => { isDragging = false; });
+
+// 3. Gamepad 遊戲手把監聽與更新迴圈
+let gamepadIndex = null;
+let buttonPressedStatus = false; // 防止手把按鈕按太快重複觸發
+
+window.addEventListener("gamepadconnected", (e) => {
+    gamepadIndex = e.gamepad.index;
+    if(gamepadPrompt) gamepadPrompt.innerHTML = `🟢 已連線控制器：<span style="color:#4caf50;">${e.gamepad.id.slice(0,15)}...</span>`;
+});
+
+window.addEventListener("gamepaddisconnected", () => {
+    gamepadIndex = null;
+    if(gamepadPrompt) gamepadPrompt.innerHTML = `❌ 控制器已斷開連線`;
+});
+
+// 手把即時動態輪詢
+function updateGamepadInput() {
+    if (gamepadIndex === null) return;
+    // 重新獲取最新狀態
+    const gamepads = navigator.getGamepads();
+    const gp = gamepads[gamepadIndex];
+    if (!gp) return;
+
+    // --- (A) 處理移動邏輯（類比搖桿或十字鍵） ---
+    if (gameStarted) {
+        let moveX = 0;
+        // 左類比搖桿 X 軸 (index 0), 設定死區避免類比搖桿飄移
+        if (Math.abs(gp.axes[0]) > 0.15) {
+            moveX = gp.axes[0] * 12; // 控制移動敏感度
+        }
+        // 十字鍵 D-pad 左(index 14) / 右(index 15)
+        if (gp.buttons[14] && gp.buttons[14].pressed) moveX = -10;
+        if (gp.buttons[15] && gp.buttons[15].pressed) moveX = 10;
+
+        if (moveX !== 0) {
+            playerX += moveX;
+            playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
+            movePlayer();
+        }
+    }
+
+    // --- (B) 處理選單按鈕邏輯（A鍵 或 PS的✖鍵，通常是 index 0） ---
+    let buttonA = gp.buttons[0];
+    if (buttonA && buttonA.pressed) {
+        if (!buttonPressedStatus) {
+            buttonPressedStatus = true;
+            // 根據選單狀態模擬點擊
+            if (!gameStarted) {
+                if (startScreen.style.display !== "none") {
+                    startGame();
+                } else if (endScreen.style.display === "flex") {
+                    restartGame();
+                }
+            }
+        }
+    } else {
+        buttonPressedStatus = false;
+    }
+}
+
+window.addEventListener("resize", () => {
+    playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
+    movePlayer();
+});
+
+
+// ==================== 核心遊戲邏輯 ====================
 function startGame(){
     initAudio();
     startScreen.style.display = "none";
     endScreen.style.display = "none";
-    score = 0;
-    time = 60;
+    score = 0; time = 60;
     collectedFeatures.clear();
-    
     fallingObjects.forEach(obj => obj.el.remove());
     fallingObjects = [];
     
     scoreText.textContent = "分數：" + score;
     timerText.textContent = time + " 秒";
     gameStarted = true;
-    
     startBGM();
     
     clearInterval(gameInterval);
@@ -282,67 +415,53 @@ function startGame(){
     spawnInterval = setInterval(() => {
         time--;
         timerText.textContent = time + " 秒";
-        if(time <= 0) {
-            endGame(false);
-            return;
-        }
-        if(Math.random() < 0.5) {
-            createFeature();
-        } else {
-            createMonster();
-        }
+        if(time <= 0) { endGame(false); return; }
+        if(Math.random() < 0.5) { createFeature(); } else { createMonster(); }
     }, 1000);
 }
 
 function createFeature(){
-    let div = document.createElement("div");
-    div.className = "item";
+    let div = document.createElement("div"); div.className = "item";
     let icon = featureIcons[Math.floor(Math.random() * featureIcons.length)];
     let name = featureNames[icon];
     div.innerHTML = `<span class="icon">${icon}</span><span class="text">${name}</span>`;
-    
-    let x = Math.random() * (window.innerWidth - 100);
-    div.style.left = x + "px";
-    div.style.top = "-100px";
-    game.appendChild(div);
-    
+    let objW = getObjWidth();
+    let x = Math.random() * (window.innerWidth - objW);
+    div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
     fallingObjects.push({ el: div, x: x, y: -100, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 });
 }
 
 function createMonster(){
-    let div = document.createElement("div");
-    div.className = "monster";
+    let div = document.createElement("div"); div.className = "monster";
     div.innerHTML = `<span class="icon">🧾</span><span class="text">紙本怪</span>`;
-    
-    let x = Math.random() * (window.innerWidth - 100);
-    div.style.left = x + "px";
-    div.style.top = "-100px";
-    game.appendChild(div);
-    
+    let objW = getObjWidth();
+    let x = Math.random() * (window.innerWidth - objW);
+    div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
     fallingObjects.push({ el: div, x: x, y: -100, type: "bad", speed: 5 + Math.random() * 4 });
 }
 
 function updateGame(){
+    // 每格畫面更新都去檢查一次手把的輸入狀況
+    updateGamepadInput();
+
     let nextObjects = [];
     let playerLeft = playerX;
     let playerRight = playerX + 150;
     let pTop = window.innerHeight - 170; 
+    let objW = getObjWidth();
     
     for(let i = 0; i < fallingObjects.length; i++){
         let obj = fallingObjects[i];
         obj.y += obj.speed;
         obj.el.style.top = obj.y + "px";
         
-        if(obj.y + 90 >= pTop && obj.y <= window.innerHeight - 50 && obj.x + 90 >= playerLeft && obj.x <= playerRight){
+        if(obj.y + objW >= pTop && obj.y <= window.innerHeight - 50 && obj.x + objW >= playerLeft && obj.x <= playerRight){
             if(obj.type === "good"){
                 score += 10;
                 collectedFeatures.add(obj.icon);
                 showTicker("收集到功能：" + obj.name + " ➕10");
                 playScoreSound();
-                
-                if(collectedFeatures.size === 8){
-                    endGame(true);
-                }
+                if(collectedFeatures.size === 8){ endGame(true); }
             } else {
                 score = Math.max(0, score - 15);
                 showTicker("撞到紙本發票怪！ ➖15");
@@ -359,74 +478,49 @@ function updateGame(){
     fallingObjects = nextObjects;
 }
 
+// 沒在遊戲中時（例如選單畫面），也要開一個小計時器持續追蹤手把按鈕按下事件
+setInterval(() => {
+    if (!gameStarted) { updateGamepadInput(); }
+}, 50);
+
 function showTicker(txt){
-    message.textContent = txt;
-    message.style.display = "block";
+    message.textContent = txt; message.style.display = "block";
     clearTimeout(message.timer);
     message.timer = setTimeout(() => { message.style.display = "none"; }, 1000);
 }
 
 function endGame(isWin){
-    gameStarted = false;
-    stopBGM();
-    clearInterval(gameInterval);
-    clearInterval(spawnInterval);
-    
+    gameStarted = false; stopBGM();
+    clearInterval(gameInterval); clearInterval(spawnInterval);
     document.getElementById("finalScore").textContent = score;
     const endIcon = document.getElementById("endIcon");
     const title = document.getElementById("endTitle");
     const list = document.getElementById("collectedList");
     
     if(isWin){
-        endIcon.textContent = "🎉";
-        title.textContent = "恭喜完美過關！";
-        title.style.color = "#FFD54F";
+        endIcon.textContent = "🎉"; title.textContent = "恭喜完美過關！"; title.style.color = "#FFD54F";
         list.innerHTML = `
-            <div style="color:#4caf50; font-weight:bold; margin-bottom:10px;">🌟 成功集滿新版APP全部 8 個功能！</div>
-            <div style="font-size:20px;">📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理｜🎁 活動捐贈<br>☁️ 自動領獎｜📍 領獎地圖｜🔔 智慧通知｜📱 桌面小工具</div>
+            <div style="color:#4caf50; font-weight:bold; margin-bottom:8px;">🌟 成功集滿新版APP全部 8 個功能！</div>
+            <div style="font-size:15px; max-height: 120px; overflow-y: auto;">📊 消費分析｜🌱 減碳存摺｜💳 會員卡管理｜🎁 活動捐贈<br>☁️ 自動領獎｜📍 領獎地圖｜🔔 智慧通知｜📱 桌面小工具</div>
         `;
         playWinSound();
     } else {
-        endIcon.textContent = "⏰";
-        title.textContent = "時間到！挑戰失敗";
-        title.style.color = "#ff5722";
-        
-        // 分門別類篩選已蒐集與未蒐集
-        let successArr = [];
-        let failArr = [];
-        
+        endIcon.textContent = "⏰"; title.textContent = "時間到！挑戰失敗"; title.style.color = "#ff5722";
+        let successArr = []; let failArr = [];
         featureIcons.forEach(icon => {
-            if(collectedFeatures.has(icon)){
-                successArr.push(`${icon} ${featureNames[icon]}`);
-            } else {
-                failArr.push(`${icon} ${featureNames[icon]}`);
-            }
+            if(collectedFeatures.has(icon)){ successArr.push(`${icon}${featureNames[icon]}`); } 
+            else { failArr.push(`${icon}${featureNames[icon]}`); }
         });
-        
-        let htmlContent = `<div style="margin-bottom:12px;">可惜沒能在 60 秒內集滿所有功能（目前共收集了 <b>${collectedFeatures.size} / 8</b> 種）。</div>`;
-        
-        // 渲染已蒐集清單
-        htmlContent += `<div style="text-align:left; margin-bottom:10px;"><span style="color:#4caf50; font-weight:bold;">已蒐集的功能：</span>`;
-        if(successArr.length > 0) {
-            htmlContent += `<span style="font-size:18px; color:#e0e0e0;">${successArr.join(' ｜ ')}</span>`;
-        } else {
-            htmlContent += `<span style="font-size:18px; color:#aaa; font-style:italic;">無</span>`;
-        }
+        let htmlContent = `<div style="margin-bottom:8px;">共收集了 <b style="color:#0ff;">${collectedFeatures.size} / 8</b> 種功能。</div>`;
+        htmlContent += `<div style="text-align:left; margin-bottom:8px; font-size:14px;"><span style="color:#4caf50; font-weight:bold;">🟢 已蒐集：</span>`;
+        htmlContent += successArr.length > 0 ? `<span style="color:#e0e0e0;">${successArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
-        
-        // 渲染未蒐集清單
-        htmlContent += `<div style="text-align:left;"><span style="color:#ff5722; font-weight:bold;">未蒐集的功能：</span>`;
-        if(failArr.length > 0) {
-            htmlContent += `<span style="font-size:18px; color:#ffb74d;">${failArr.join(' ｜ ')}</span>`;
-        } else {
-            htmlContent += `<span style="font-size:18px; color:#aaa; font-style:italic;">無</span>`;
-        }
+        htmlContent += `<div style="text-align:left; font-size:14px;"><span style="color:#ff5722; font-weight:bold;">🔴 未蒐集：</span>`;
+        htmlContent += failArr.length > 0 ? `<span style="color:#ffb74d;">${failArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
-        
         list.innerHTML = htmlContent;
         playLoseSound();
     }
-    
     endScreen.style.display = "flex";
 }
 
