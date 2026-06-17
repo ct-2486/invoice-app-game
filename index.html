@@ -7,10 +7,8 @@
 <style>
 body{
 margin:0;overflow:hidden;font-family:"Microsoft JhengHei", sans-serif;
-/* 將你提供的美麗插畫設為背景，並加上深色遮罩提升上方文字可讀性 */
 background: linear-gradient(rgba(10, 15, 30, 0.3), rgba(4, 9, 20, 0.65)), url('image.png') center bottom/cover no-repeat fixed;
 color: #fff;
-/* 防止行動裝置上滑動時畫面晃動或縮放 */
 position: fixed;
 width: 100%;
 height: 100%;
@@ -21,7 +19,6 @@ user-select: none;
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,.02); pointer-events: none;}
 #game{position:relative;width:100vw;height:100vh;overflow:hidden;}
 
-/* 分數與時間 UI 調整成 RWD 自適應大小 */
 #score,#timer{
 position:absolute;top:15px;z-index:1000;background:rgba(255,255,255,0.9);color:#000;
 padding:8px 15px;border-radius:12px;font-size:20px;font-weight:bold;
@@ -32,18 +29,16 @@ box-shadow: 0 4px 15px rgba(0,255,255,0.4);
 }
 #score{left:15px;} #timer{right:15px;}
 
-/* 飛碟大小與基本定位 */
 #player{
 position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
 width:150px;height:150px;
 display:flex;align-items:center;justify-content:center;
 z-index:500;
-transition: left 0.02s linear; /* 縮短時間讓手把反應更即時 */
+transition: left 0.02s linear;
 cursor: grab;
 }
 #player:active { cursor: grabbing; }
 
-/* 掉落物大小調整，手機版縮小更適合點擊與躲避 */
 .item,.monster{
 position:absolute;width:75px;height:75px;border-radius:18px;
 display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -86,7 +81,6 @@ font-size: 20px; border: 2px solid #0ff; pointer-events: none;
     #message { font-size: 26px; padding: 15px 35px; border-radius: 20px; }
 }
 
-/* 開始畫面自適應 */
 #startScreen{
 position:fixed;inset:0;background:rgba(10,15,30,.92);z-index:3000;
 display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -108,7 +102,6 @@ transition: 0.2s;
 }
 #startScreen button:hover{transform:scale(1.1);background:#00f2fe;}
 
-/* 結束畫面自適應 */
 #endScreen{
 position:fixed;inset:0;background:rgba(5,10,20,.95);z-index:4000;text-align:center;color:white;
 justify-content:center;align-items:center;flex-direction:column;padding: 20px;box-sizing: border-box;
@@ -124,7 +117,6 @@ justify-content:center;align-items:center;flex-direction:column;padding: 20px;bo
     #endScreen button { padding: 15px 60px; font-size: 28px; border-radius: 30px; }
 }
 
-/* 提示控制器連線狀態 */
 #gamepadPrompt {
     margin-top: 10px;
     font-size: 14px;
@@ -133,21 +125,9 @@ justify-content:center;align-items:center;flex-direction:column;padding: 20px;bo
     animation: pulse 1.5s infinite alternate;
 }
 
-/* 用純 CSS 刻出穩定不破圖的核心狀態小標籤 */
-.status-tag {
-    display: inline-flex;
-    align-items: center;
-    font-weight: bold;
-    margin-right: 6px;
-}
-.dot-success {
-    width: 12px; height: 12px; background-color: #4caf50; border-radius: 50%;
-    display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #4caf50;
-}
-.dot-fail {
-    width: 12px; height: 12px; background-color: #ff5722; border-radius: 50%;
-    display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #ff5722;
-}
+.status-tag { display: inline-flex; align-items: center; font-weight: bold; margin-right: 6px; }
+.dot-success { width: 12px; height: 12px; background-color: #4caf50; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #4caf50; }
+.dot-fail { width: 12px; height: 12px; background-color: #ff5722; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #ff5722; }
 </style>
 </head>
 <body>
@@ -179,23 +159,12 @@ justify-content:center;align-items:center;flex-direction:column;padding: 20px;bo
     <div id="endIcon" style="font-size:50px;margin-bottom:5px;">🎉</div>
     <h1 id="endTitle">恭喜過關！</h1>
     <h2>總分： <span id="finalScore" style="color:#0ff;">0</span></h2>
-    
-    <div id="collectedList" style="font-size:16px; width:100%; max-width:750px; line-height:1.6; margin:15px 0; background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;">
-    </div>
-    
+    <div id="collectedList" style="font-size:16px; width:100%; max-width:750px; line-height:1.6; margin:15px 0; background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;"></div>
     <h3>立即下載新版統一發票兌獎APP</h3>
-    
     <div style="display:flex; flex-wrap: wrap; justify-content: center; gap:15px; margin-top:5px; margin-bottom: 20px;">
-        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank"
-           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
-            <span>App Store 下載</span>
-        </a>
-        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329" target="_blank"
-           style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;">
-            <span>Google Play 下載</span>
-        </a>
+        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E5%88%B0%E6%8D%8C%E6%8A%95%E6%9C%9F%E9%99%84%E6%9E%97/id6723456789?mt=8" target="_blank" style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;"><span>App Store 下載</span></a>
+        <a href="https://apps.apple.com/tw/app/%E7%B5%B1%E4%B8%80%E7%99%BC%E7%A5%A8%E5%85%8C%E7%8D%8E/id1445981329" target="_blank" style="display:flex;align-items:center;background:#fff;color:#000;border:none;padding:10px 18px;border-radius:12px;font-size:16px;font-weight:bold;text-decoration:none;box-shadow:0 5px 15px rgba(0,0,0,.3);gap:8px;"><span>Google Play 下載</span></a>
     </div>
-    
     <button onclick="restartGame()">重新挑戰</button>
 </div>
 
@@ -250,28 +219,19 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
-// ==================== 🛠️ 畫面中央高質感半透明浮水印 ====================
 const watermark = document.createElement('div');
-watermark.style.position = 'absolute';
-watermark.style.top = '75px';
-watermark.style.left = '50%';
-watermark.style.transform = 'translateX(-50%)';
-watermark.style.color = 'rgba(255, 255, 255, 0.25)';
-watermark.style.fontSize = '20px';
-watermark.style.fontWeight = 'bold';
-watermark.style.zIndex = '10';
-watermark.style.letterSpacing = '2px';
-watermark.style.textShadow = '0 2px 8px rgba(0,0,0,0.5)';
-watermark.style.pointerEvents = 'none';
-watermark.style.whiteSpace = 'nowrap';
-watermark.textContent = '臺北市稅捐稽徵處 信義分處';
+watermark.style.position = 'absolute'; watermark.style.top = '75px'; watermark.style.left = '50%'; watermark.style.transform = 'translateX(-50%)';
+watermark.style.color = 'rgba(255, 255, 255, 0.25)'; watermark.style.fontSize = '20px'; watermark.style.fontWeight = 'bold';
+watermark.style.zIndex = '10'; watermark.style.letterSpacing = '2px'; watermark.style.textShadow = '0 2px 8px rgba(0,0,0,0.5)';
+watermark.style.pointerEvents = 'none'; watermark.style.whiteSpace = 'nowrap'; watermark.textContent = '臺北市稅捐稽徵處 信義分處';
 game.appendChild(watermark);
 
 
-// ==================== 🎵 Web Audio API 音效與音樂引擎 ====================
+// ==================== ⚡ 核心優化：緊張刺激音樂與音效引擎 ====================
 let audioCtx = null;
 let bgmInterval = null;
 let bgmStep = 0;
+let currentBpmSpeed = 150; // 初始緊張節奏速度加倍快！
 
 function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
 function playSound(freqs, duration, type = "sine", gainStart = 0.1) {
@@ -285,34 +245,59 @@ function playSound(freqs, duration, type = "sine", gainStart = 0.1) {
         if (freqs.length === 1) { osc.frequency.setValueAtTime(freqs[0], now); }
         else {
             osc.frequency.setValueAtTime(freqs[0], now);
-            for(let i = 1; i < freqs.length; i++){ osc.frequency.exponentialRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1)))); }
+            for(let i = 1; i < freqs.length; i++){ osc.frequency.linearRampToValueAtTime(freqs[i], now + (duration * (i / (freqs.length - 1)))); }
         }
         osc.start(now); osc.stop(now + duration);
     } catch (e) { console.log(e); }
 }
-function playScoreSound() { playSound([523.25, 880], 0.15, "triangle", 0.15); }
-function playMonsterSound() { playSound([180, 80], 0.25, "sawtooth", 0.2); }
-function playWinSound() { if(!audioCtx) return; let notes = [523.25, 659.25, 783.99, 1046.50]; notes.forEach((f, i) => { setTimeout(() => { playSound([f, f * 1.2], 0.6, "sine", 0.1); }, i * 100); }); }
-function playLoseSound() { playSound([300, 150, 100], 0.6, "sawtooth", 0.2); }
+function playScoreSound() { playSound([587.33, 880, 1174.66], 0.2, "triangle", 0.15); }
+function playMonsterSound() { playSound([140, 90, 60], 0.3, "sawtooth", 0.25); }
+function playWinSound() { if(!audioCtx) return; let notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; notes.forEach((f, i) => { setTimeout(() => { playSound([f, f * 1.2], 0.5, "sine", 0.12); }, i * 80); }); }
+function playLoseSound() { playSound([220, 146.83, 110, 73.42], 0.8, "sawtooth", 0.25); }
 
+// 緊張刺激小調背景音樂旋律線 (A短調 / D短調)
 function startBGM() {
     stopBGM();
-    const melody = [
-        440, 493, 523, 587, 659, 587, 523, 493,
-        440, 523, 659, 783, 880, 783, 659, 523,
-        587, 587, 659, 783, 880, 880, 987, 1046,
-        880, 783, 659, 587, 523, 493, 440, 392
+    // 充滿危機感、賽博龐克風格的斷奏前進旋律
+    const highMelody = [
+        440, 440, 523, 440, 587, 440, 523, 493,
+        392, 392, 493, 392, 523, 392, 493, 440,
+        349, 349, 440, 349, 523, 349, 440, 392,
+        440, 523, 587, 659, 783, 659, 587, 523
     ];
     bgmStep = 0;
-    bgmInterval = setInterval(() => {
-        if (!gameStarted) { stopBGM(); return; }
-        let f = melody[bgmStep % melody.length];
-        if (bgmStep % 4 === 0) { playSound([f / 4, f / 4], 0.2, "triangle", 0.06); }
-        playSound([f, f], 0.12, "sine", 0.03);
-        bgmStep++;
-    }, 200);
+    currentBpmSpeed = 140; // 每拍的毫秒數（數字越小越快）
+    
+    runBgmLoop(highMelody);
 }
-function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
+
+function runBgmLoop(melody) {
+    if (!gameStarted) return;
+    
+    let f = melody[bgmStep % melody.length];
+    
+    // 依據剩餘時間自動將音樂速度加快、音高拉尖！
+    let timeModifier = 1.0;
+    if (time <= 15) {
+        currentBpmSpeed = 95; // 最後15秒極速狂飆！
+        timeModifier = 1.25;  // 旋律音調整體拉高成超級警報感
+    } else if (time <= 30) {
+        currentBpmSpeed = 115; // 剩半分時中度加速
+        timeModifier = 1.1;
+    }
+
+    // 重低音 Bass 節拍 (每兩拍重擊一次)
+    if (bgmStep % 2 === 0) {
+        playSound([80, 40], 0.15, "triangle", 0.15); // 心跳重低音
+    }
+    // 主旋律
+    playSound([f * timeModifier, f * timeModifier], 0.09, "sine", 0.04);
+    
+    bgmStep++;
+    bgmInterval = setTimeout(() => runBgmLoop(melody), currentBpmSpeed);
+}
+
+function stopBGM() { if (bgmInterval) { clearTimeout(bgmInterval); bgmInterval = null; } }
 
 
 // ==================== 🎮 控制輸入整合（鍵盤、觸控、手把） ====================
@@ -320,7 +305,6 @@ function movePlayer(){ player.style.left = playerX + "px"; }
 playerX = window.innerWidth / 2 - 75;
 movePlayer();
 
-// 1. 鍵盤事件
 document.addEventListener("keydown", e => {
     if(!gameStarted) return;
     if(e.key === "ArrowLeft" || e.key.toLowerCase() === "a") playerX -= 50;
@@ -329,7 +313,6 @@ document.addEventListener("keydown", e => {
     movePlayer();
 });
 
-// 2. 觸控與滑鼠拖曳
 let isDragging = false;
 function handleMove(clientX) {
     if (!gameStarted) return;
@@ -337,14 +320,13 @@ function handleMove(clientX) {
     playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
     movePlayer();
 }
-game.addEventListener("touchstart", e => { isDragging = true; handleMove(e.touches[0].clientX); }, {passive: true});
+game.addEventListener("touchstart", e => { isDragging = true; handleMove(e.touches[0].clientX); initAudio(); }, {passive: true});
 game.addEventListener("touchmove", e => { if(isDragging) handleMove(e.touches[0].clientX); }, {passive: true});
 game.addEventListener("touchend", () => { isDragging = false; });
 game.addEventListener("mousedown", e => { isDragging = true; handleMove(e.clientX); });
 game.addEventListener("mousemove", e => { if(isDragging) handleMove(e.clientX); });
 document.addEventListener("mouseup", () => { isDragging = false; });
 
-// 3. Gamepad 遊戲手把
 let gamepadIndex = null;
 let buttonPressedStatus = false;
 
@@ -352,13 +334,26 @@ window.addEventListener("gamepadconnected", (e) => {
     gamepadIndex = e.gamepad.index;
     if(gamepadPrompt) gamepadPrompt.innerHTML = `🟢 已連線控制器：<span style="color:#4caf50;">${e.gamepad.id.slice(0,15)}...</span>`;
 });
-
 window.addEventListener("gamepaddisconnected", () => {
     gamepadIndex = null;
     if(gamepadPrompt) gamepadPrompt.innerHTML = `❌ 控制器已斷開連線`;
 });
 
+function scanGamepadsForApple() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+            gamepadIndex = i;
+            if(gamepadPrompt && !gamepadPrompt.innerHTML.includes("已連線")) {
+                gamepadPrompt.innerHTML = `🟢 已連線控制器：<span style="color:#4caf50;">${gamepads[i].id.slice(0,15)}...</span>`;
+            }
+            break;
+        }
+    }
+}
+
 function updateGamepadInput() {
+    if (gamepadIndex === null) { scanGamepadsForApple(); }
     if (gamepadIndex === null) return;
     const gamepads = navigator.getGamepads();
     const gp = gamepads[gamepadIndex];
@@ -369,7 +364,6 @@ function updateGamepadInput() {
         if (Math.abs(gp.axes[0]) > 0.15) { moveX = gp.axes[0] * 12; }
         if (gp.buttons[14] && gp.buttons[14].pressed) moveX = -10;
         if (gp.buttons[15] && gp.buttons[15].pressed) moveX = 10;
-
         if (moveX !== 0) {
             playerX += moveX;
             playerX = Math.max(0, Math.min(window.innerWidth - 150, playerX));
@@ -409,8 +403,10 @@ function startGame(){
     
     scoreText.textContent = "分數：" + score;
     timerText.textContent = time + " 秒";
+    timerText.style.color = "#000";
     gameStarted = true;
-    startBGM();
+    
+    startBGM(); // 啟動緊張刺激音樂
     
     clearInterval(gameInterval);
     clearInterval(spawnInterval);
@@ -419,6 +415,13 @@ function startGame(){
     spawnInterval = setInterval(() => {
         time--;
         timerText.textContent = time + " 秒";
+        
+        // 倒數最後15秒把時間字體變紅色閃爍
+        if(time <= 15) {
+            timerText.style.color = "#ff1744";
+            timerText.style.boxShadow = "0 4px 20px rgba(255,23,68,0.7)";
+        }
+        
         if(time <= 0) { endGame(false); return; }
         if(Math.random() < 0.5) { createFeature(); } else { createMonster(); }
     }, 1000);
@@ -432,7 +435,9 @@ function createFeature(){
     let objW = getObjWidth();
     let x = Math.random() * (window.innerWidth - objW);
     div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
-    fallingObjects.push({ el: div, x: x, y: -100, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 });
+    // 隨著時間縮短，物件掉落速度也會悄悄變快
+    let speedBonus = (60 - time) * 0.05;
+    fallingObjects.push({ el: div, x: x, y: -100, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 + speedBonus });
 }
 
 function createMonster(){
@@ -441,7 +446,8 @@ function createMonster(){
     let objW = getObjWidth();
     let x = Math.random() * (window.innerWidth - objW);
     div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
-    fallingObjects.push({ el: div, x: x, y: -100, type: "bad", speed: 5 + Math.random() * 4 });
+    let speedBonus = (60 - time) * 0.05;
+    fallingObjects.push({ el: div, x: x, y: -100, type: "bad", speed: 5 + Math.random() * 4 + speedBonus });
 }
 
 function updateGame(){
@@ -512,12 +518,9 @@ function endGame(isWin){
             else { failArr.push(`${icon}${featureNames[icon]}`); }
         });
         let htmlContent = `<div style="margin-bottom:8px;">共收集了 <b style="color:#0ff;">${collectedFeatures.size} / 8</b> 種功能。</div>`;
-        
-        // 更換為純 CSS 渲染的狀態標籤，100% 解決破圖/方塊字問題
         htmlContent += `<div style="text-align:left; margin-bottom:8px; font-size:14px;"><span class="status-tag" style="color:#4caf50;"><span class="dot-success"></span>已蒐集：</span>`;
         htmlContent += successArr.length > 0 ? `<span style="color:#e0e0e0;">${successArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
-        
         htmlContent += `<div style="text-align:left; font-size:14px;"><span class="status-tag" style="color:#ff5722;"><span class="dot-fail"></span>未蒐集：</span>`;
         htmlContent += failArr.length > 0 ? `<span style="color:#ffb74d;">${failArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
