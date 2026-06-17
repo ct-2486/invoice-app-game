@@ -6,7 +6,7 @@
 <title>信義區雲端發票冒險島</title>
 <style>
 body{
-margin:0;overflow:hidden;font-family:"Microsoft JhengHei";
+margin:0;overflow:hidden;font-family:"Microsoft JhengHei", sans-serif;
 /* 將你提供的美麗插畫設為背景，並加上深色遮罩提升上方文字可讀性 */
 background: linear-gradient(rgba(10, 15, 30, 0.3), rgba(4, 9, 20, 0.65)), url('image.png') center bottom/cover no-repeat fixed;
 color: #fff;
@@ -131,6 +131,22 @@ justify-content:center;align-items:center;flex-direction:column;padding: 20px;bo
     color: #64b5f6;
     font-weight: bold;
     animation: pulse 1.5s infinite alternate;
+}
+
+/* 用純 CSS 刻出穩定不破圖的核心狀態小標籤 */
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    font-weight: bold;
+    margin-right: 6px;
+}
+.dot-success {
+    width: 12px; height: 12px; background-color: #4caf50; border-radius: 50%;
+    display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #4caf50;
+}
+.dot-fail {
+    width: 12px; height: 12px; background-color: #ff5722; border-radius: 50%;
+    display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #ff5722;
 }
 </style>
 </head>
@@ -328,9 +344,9 @@ game.addEventListener("mousedown", e => { isDragging = true; handleMove(e.client
 game.addEventListener("mousemove", e => { if(isDragging) handleMove(e.clientX); });
 document.addEventListener("mouseup", () => { isDragging = false; });
 
-// 3. Gamepad 遊戲手把監聽與更新迴圈
+// 3. Gamepad 遊戲手把
 let gamepadIndex = null;
-let buttonPressedStatus = false; // 防止手把按鈕按太快重複觸發
+let buttonPressedStatus = false;
 
 window.addEventListener("gamepadconnected", (e) => {
     gamepadIndex = e.gamepad.index;
@@ -342,22 +358,15 @@ window.addEventListener("gamepaddisconnected", () => {
     if(gamepadPrompt) gamepadPrompt.innerHTML = `❌ 控制器已斷開連線`;
 });
 
-// 手把即時動態輪詢
 function updateGamepadInput() {
     if (gamepadIndex === null) return;
-    // 重新獲取最新狀態
     const gamepads = navigator.getGamepads();
     const gp = gamepads[gamepadIndex];
     if (!gp) return;
 
-    // --- (A) 處理移動邏輯（類比搖桿或十字鍵） ---
     if (gameStarted) {
         let moveX = 0;
-        // 左類比搖桿 X 軸 (index 0), 設定死區避免類比搖桿飄移
-        if (Math.abs(gp.axes[0]) > 0.15) {
-            moveX = gp.axes[0] * 12; // 控制移動敏感度
-        }
-        // 十字鍵 D-pad 左(index 14) / 右(index 15)
+        if (Math.abs(gp.axes[0]) > 0.15) { moveX = gp.axes[0] * 12; }
         if (gp.buttons[14] && gp.buttons[14].pressed) moveX = -10;
         if (gp.buttons[15] && gp.buttons[15].pressed) moveX = 10;
 
@@ -368,18 +377,13 @@ function updateGamepadInput() {
         }
     }
 
-    // --- (B) 處理選單按鈕邏輯（A鍵 或 PS的✖鍵，通常是 index 0） ---
     let buttonA = gp.buttons[0];
     if (buttonA && buttonA.pressed) {
         if (!buttonPressedStatus) {
             buttonPressedStatus = true;
-            // 根據選單狀態模擬點擊
             if (!gameStarted) {
-                if (startScreen.style.display !== "none") {
-                    startGame();
-                } else if (endScreen.style.display === "flex") {
-                    restartGame();
-                }
+                if (startScreen.style.display !== "none") { startGame(); } 
+                else if (endScreen.style.display === "flex") { restartGame(); }
             }
         }
     } else {
@@ -441,7 +445,6 @@ function createMonster(){
 }
 
 function updateGame(){
-    // 每格畫面更新都去檢查一次手把的輸入狀況
     updateGamepadInput();
 
     let nextObjects = [];
@@ -478,10 +481,7 @@ function updateGame(){
     fallingObjects = nextObjects;
 }
 
-// 沒在遊戲中時（例如選單畫面），也要開一個小計時器持續追蹤手把按鈕按下事件
-setInterval(() => {
-    if (!gameStarted) { updateGamepadInput(); }
-}, 50);
+setInterval(() => { if (!gameStarted) { updateGamepadInput(); } }, 50);
 
 function showTicker(txt){
     message.textContent = txt; message.style.display = "block";
@@ -512,10 +512,13 @@ function endGame(isWin){
             else { failArr.push(`${icon}${featureNames[icon]}`); }
         });
         let htmlContent = `<div style="margin-bottom:8px;">共收集了 <b style="color:#0ff;">${collectedFeatures.size} / 8</b> 種功能。</div>`;
-        htmlContent += `<div style="text-align:left; margin-bottom:8px; font-size:14px;"><span style="color:#4caf50; font-weight:bold;">🟢 已蒐集：</span>`;
+        
+        // 更換為純 CSS 渲染的狀態標籤，100% 解決破圖/方塊字問題
+        htmlContent += `<div style="text-align:left; margin-bottom:8px; font-size:14px;"><span class="status-tag" style="color:#4caf50;"><span class="dot-success"></span>已蒐集：</span>`;
         htmlContent += successArr.length > 0 ? `<span style="color:#e0e0e0;">${successArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
-        htmlContent += `<div style="text-align:left; font-size:14px;"><span style="color:#ff5722; font-weight:bold;">🔴 未蒐集：</span>`;
+        
+        htmlContent += `<div style="text-align:left; font-size:14px;"><span class="status-tag" style="color:#ff5722;"><span class="dot-fail"></span>未蒐集：</span>`;
         htmlContent += failArr.length > 0 ? `<span style="color:#ffb74d;">${failArr.join('｜')}</span>` : `<span style="color:#aaa; font-style:italic;">無</span>`;
         htmlContent += `</div>`;
         list.innerHTML = htmlContent;
