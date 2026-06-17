@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>信義區雲端發票冒險島-AI體感/搖桿/觸控全能版</title>
+<title>信義區雲端發票冒險島-AI體感/搖桿/觸控/鍵盤全能版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
@@ -39,18 +39,18 @@ box-shadow: 0 4px 12px rgba(0,242,254,0.3);
 }
 #score{left:15px;} #timer{right:15px;}
 
-/* 🛸 飛碟本體外殼：注入全新發光與漂浮動畫 */
+/* 🛸 飛碟本體外殼 */
 #player{
 position:absolute;bottom:70px;left:50%;transform:translateX(-50%);
 width: calc(140px * var(--base-scale)); height: calc(140px * var(--base-scale)); 
 display:flex;align-items:center;justify-content:center; z-index:500;
 touch-action: none; cursor: grab;
-animation: ufoFloat 2s ease-in-out infinite; /* 懸浮動畫 */
-filter: drop-shadow(0 0 calc(12px * var(--base-scale)) rgba(0, 242, 254, 0.8)); /* 飛碟整體光暈 */
+animation: ufoFloat 2s ease-in-out infinite; 
+filter: drop-shadow(0 0 calc(12px * var(--base-scale)) rgba(0, 242, 254, 0.8));
 }
 #player:active { cursor: grabbing; }
 
-/* 🛸 飛碟相關的特效動畫核心 CSS */
+/* 🛸 飛碟動畫特效核心 CSS */
 @keyframes ufoFloat {
     0%, 100% { transform: translate(-50%, 0px); }
     50% { transform: translate(-50%, calc(-10px * var(--base-scale))); }
@@ -134,7 +134,7 @@ box-shadow:0 6px 20px rgba(21,101,192,.4);
     display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;
 }
 
-/* 用純 CSS 渲染立體發光指示燈 */
+/* 純 CSS 渲染立體發光指示燈 */
 .status-indicator { display: inline-flex; align-items: center; font-weight: bold; }
 .css-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
 .css-dot-green { background-color: #4caf50; box-shadow: 0 0 8px #4caf50, inset 0 0 2px #fff; }
@@ -165,7 +165,7 @@ box-shadow:0 6px 20px rgba(21,101,192,.4);
 
 <div id="startScreen">
 <h1>信義區雲端發票冒險島</h1>
-<h2>🖐️體感 / 🎮搖桿 / 📱觸控 三模合一版</h2>
+<h2>🖐️體感 / 🎮搖桿 / 📱觸控 / ⌨️鍵盤 全能版</h2>
 <div class="intro-box">
     <div style="text-align: center; margin-bottom: 12px; color: #00e5ff; font-weight: bold;">
         你是臺北市稅捐稽徵處信義分處的雲端飛碟！
@@ -183,6 +183,10 @@ box-shadow:0 6px 20px rgba(21,101,192,.4);
         <span class="intro-text"><b>螢幕觸控</b>：在手機/平板上<b>直接按住飛碟左右拖曳</b>，或點擊畫面兩側操控。</span>
     </div>
     <div class="intro-line">
+        <span class="intro-icon">⌨️</span>
+        <span class="intro-text"><b>電腦鍵盤</b>：按鍵盤的【左右方向鍵 ◀ ▶】或【A、D 鍵】來控制左右移動。</span>
+    </div>
+    <div class="intro-line">
         <span class="intro-icon">📌</span>
         <span class="intro-text">碰綠色功能雲端發票箱 <span style="color:#4caf50; font-weight:bold;">+10 分</span>，碰紅色紙本發票怪 <span style="color:#ff5252; font-weight:bold;">-15 分</span>。</span>
     </div>
@@ -196,7 +200,7 @@ box-shadow:0 6px 20px rgba(21,101,192,.4);
     <span>｜</span>
     <span class="status-indicator"><span class="css-dot css-dot-gray" id="dot-gp"></span>XBOX 搖桿等待中</span>
     <span>｜</span>
-    <span class="status-indicator"><span class="css-dot css-dot-green"></span> 觸控就緒</span>
+    <span class="status-indicator"><span class="css-dot css-dot-green"></span>📱 觸控/⌨️ 鍵盤就緒</span>
 </div>
 <button onclick="startGame()">點擊開始遊戲</button>
 </div>
@@ -227,6 +231,8 @@ let fallingObjects = [];
 let collectedFeatures = new Set();
 
 let joystickSpeed = 16; 
+let keyboardSpeed = 22; // 鍵盤移動速度
+let keysPressed = {}; // 紀錄被按下的鍵盤按鍵
 let isDragging = false;
 
 const featureIcons=["📊","🌱","💳","🎁","☁️","📍","🔔","📱"];
@@ -258,17 +264,14 @@ function movePlayer(){ player.style.left = playerX + "px"; }
 player.innerHTML = `
     <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;">
         <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:calc(13px * var(--base-scale));color:#fff;text-shadow:0 0 8px #0ff;font-weight:bold;white-space:nowrap;">稅務飛碟</div>
-        
         <div style="width:90%;height:45%;position:relative;margin-top:10px;">
             <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:42%;height:55%;background:rgba(0, 242, 254, 0.45);border:2px solid #0ff;border-radius:50% 50% 0 0;z-index:3;box-shadow:0 0 10px rgba(0,242,254,0.5);"></div>
-            
             <div style="position:absolute;top:32%;left:0;width:100%;height:68%;background:linear-gradient(180deg, #434343 0%, #1a1a1a 100%);border-radius:50%;border:2px solid #555;z-index:2;display:flex;align-items:center;justify-content:space-around;padding:0 12px;box-sizing:border-box;">
                 <div style="width:7px;height:7px;border-radius:50%;animation:ufoLightFlashA 1s linear infinite;"></div>
                 <div style="width:7px;height:7px;border-radius:50%;animation:ufoLightFlashB 1s linear infinite;"></div>
                 <div style="width:7px;height:7px;border-radius:50%;animation:ufoLightFlashC 1s linear infinite;"></div>
                 <div style="width:7px;height:7px;border-radius:50%;animation:ufoLightFlashA 1s linear infinite;"></div>
             </div>
-            
             <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:45%;height:18px;background:#00f2fe;border-radius:50%;z-index:1;box-shadow:0 0 25px #00f2fe, 0 0 40px #00f2fe, 0 0 10px #fff;"></div>
         </div>
     </div>
@@ -276,6 +279,41 @@ player.innerHTML = `
 
 playerX = window.innerWidth / 2 - (playerWidth / 2);
 resizeGame();
+
+// ==================== ⌨️ 鍵盤控制監聽器 ====================
+window.addEventListener("keydown", (e) => {
+    keysPressed[e.key] = true;
+    
+    // 如果在開始或結束畫面，按 Enter 鍵或空白鍵可以觸發遊戲開始/重玩
+    if (!gameStarted) {
+        if (e.key === "Enter" || e.key === " ") {
+            if (startScreen.style.display !== "none") startGame();
+            else if (endScreen.style.display === "flex") restartGame();
+        }
+    }
+});
+
+window.addEventListener("keyup", (e) => {
+    delete keysPressed[e.key];
+});
+
+function handleKeyboardInput() {
+    if (!gameStarted) return;
+    
+    let moveDirection = 0;
+    if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) {
+        moveDirection = -1;
+    }
+    if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) {
+        moveDirection = 1;
+    }
+    
+    if (moveDirection !== 0) {
+        playerX += moveDirection * keyboardSpeed;
+        playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
+        movePlayer();
+    }
+}
 
 // ==================== 📱 手指觸控控制 ====================
 player.addEventListener('touchstart', (e) => {
@@ -466,7 +504,9 @@ function createMonster(){
 }
 
 function updateGame(){
-    handleGamepadInput();
+    handleKeyboardInput(); // 每影格處理鍵盤輸入
+    handleGamepadInput();  // 每影格處理搖桿輸入
+    
     let nextObjects = [];
     let playerLeft = playerX; let playerRight = playerX + playerWidth;
     let pTop = window.innerHeight - 170;
@@ -500,7 +540,7 @@ function showTicker(txt){
 
 // ==================== 結束畫面 ====================
 function endGame(isWin){
-    gameStarted = false; stopBGM(); isDragging = false;
+    gameStarted = false; stopBGM(); isDragging = false; keysPressed = {};
     clearInterval(gameInterval); clearInterval(spawnInterval);
     document.getElementById("finalScore").textContent = score;
     const endIcon = document.getElementById("endIcon");
