@@ -20,6 +20,22 @@ color: #fff; position: fixed; width: 100%; height: 100%; touch-action: none; -we
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,.02); pointer-events: none;}
 #game{position:relative;width:100vw;height:100vh;overflow:hidden;}
 
+/* 🏛️ 遊戲中背景跑馬燈浮水印（雙主辦單位強效宣導，完全不擋操作） */
+#gameWatermark {
+    position: absolute; bottom: 30px; left: 0; width: 100%; overflow: hidden;
+    white-space: nowrap; pointer-events: none; z-index: 10; opacity: 0.15;
+}
+.watermark-track {
+    display: inline-block; padding-left: 100%;
+    animation: marqueeTrack 28s linear infinite;
+    font-size: calc(20px * var(--base-scale)); font-weight: bold; color: #00f2fe;
+    letter-spacing: 2px; text-shadow: 0 0 8px rgba(0,242,254,0.6);
+}
+@keyframes marqueeTrack {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+}
+
 /* AI 視訊預覽小視窗 */
 #videoContainer {
     position: absolute; bottom: 15px; left: 15px; 
@@ -96,8 +112,17 @@ display:flex;flex-direction:column;align-items:center;justify-content:center;
 text-align:center;color:white;padding: 20px;box-sizing: border-box;
 overflow-y: auto;
 }
-#startScreen h1{font-size: calc(24px * var(--base-scale)); margin:0 0 8px 0; color:#FFD54F; text-shadow: 0 0 15px rgba(255,213,79,0.4);}
-#startScreen h2{font-size: calc(16px * var(--base-scale)); margin:5px 0 20px 0; color:#fff; font-weight:normal; opacity:0.9;}
+/* 🏛️ 首頁頂部雙主辦單位抬頭列 */
+.gov-header {
+    width: 100%; max-width: 660px; margin-bottom: 15px; padding: 6px 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+    border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+    font-size: calc(13px * var(--base-scale)); color: #e0e0e0; letter-spacing: 1px;
+}
+.gov-header span { color: #ffd54f; font-weight: bold; }
+
+#startScreen h1{font-size: calc(24px * var(--base-scale)); margin:0 0 4px 0; color:#FFD54F; text-shadow: 0 0 15px rgba(255,213,79,0.4);}
+#startScreen h2{font-size: calc(15px * var(--base-scale)); margin:5px 0 20px 0; color:#fff; font-weight:normal; opacity:0.9;}
 #startScreen .intro-box{
     font-size: calc(13px * var(--base-scale)); width:100%; max-width:640px; line-height:1.6; 
     background:rgba(255,255,255,0.06); padding: 15px; border-radius: 14px; 
@@ -158,12 +183,22 @@ box-shadow:0 6px 20px rgba(21,101,192,.4);
 <div id="player">🛸</div>
 <div id="message"></div>
 
+<div id="gameWatermark">
+    <div class="watermark-track">
+        🏛️ 主辦單位：財政部臺北國稅局信義分局 ＆ 臺北市稅捐稽徵處信義分處 🚀 聯合宣導：推廣雲端發票・智慧節能減碳新生活 🏛️ 主辦單位：財政部臺北國稅局信義分局 ＆ 臺北市稅捐稽徵處信義分處 🚀 聯合宣導
+    </div>
+</div>
+
 <div id="videoContainer">
     <video id="webcam" autoplay playsinline></video>
 </div>
 </div>
 
 <div id="startScreen">
+<div class="gov-header">
+    主辦單位：<span>財政部臺北國稅局信義分局</span> ＆ <span>臺北市稅捐稽徵處信義分處</span>
+</div>
+
 <h1>信義區雲端發票冒險島</h1>
 <h2>🖐️體感 / 🎮搖桿 / 📱觸控 / ⌨️鍵盤 全能版</h2>
 <div class="intro-box">
@@ -231,8 +266,8 @@ let fallingObjects = [];
 let collectedFeatures = new Set();
 
 let joystickSpeed = 16; 
-let keyboardSpeed = 22; // 鍵盤移動速度
-let keysPressed = {}; // 紀錄被按下的鍵盤按鍵
+let keyboardSpeed = 22; 
+let keysPressed = {}; 
 let isDragging = false;
 
 const featureIcons=["📊","🌱","💳","🎁","☁️","📍","🔔","📱"];
@@ -283,8 +318,6 @@ resizeGame();
 // ==================== ⌨️ 鍵盤控制監聽器 ====================
 window.addEventListener("keydown", (e) => {
     keysPressed[e.key] = true;
-    
-    // 如果在開始或結束畫面，按 Enter 鍵或空白鍵可以觸發遊戲開始/重玩
     if (!gameStarted) {
         if (e.key === "Enter" || e.key === " ") {
             if (startScreen.style.display !== "none") startGame();
@@ -292,22 +325,13 @@ window.addEventListener("keydown", (e) => {
         }
     }
 });
-
-window.addEventListener("keyup", (e) => {
-    delete keysPressed[e.key];
-});
+window.addEventListener("keyup", (e) => { delete keysPressed[e.key]; });
 
 function handleKeyboardInput() {
     if (!gameStarted) return;
-    
     let moveDirection = 0;
-    if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) {
-        moveDirection = -1;
-    }
-    if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) {
-        moveDirection = 1;
-    }
-    
+    if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) moveDirection = -1;
+    if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) moveDirection = 1;
     if (moveDirection !== 0) {
         playerX += moveDirection * keyboardSpeed;
         playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
@@ -504,8 +528,8 @@ function createMonster(){
 }
 
 function updateGame(){
-    handleKeyboardInput(); // 每影格處理鍵盤輸入
-    handleGamepadInput();  // 每影格處理搖桿輸入
+    handleKeyboardInput(); 
+    handleGamepadInput();  
     
     let nextObjects = [];
     let playerLeft = playerX; let playerRight = playerX + playerWidth;
@@ -575,7 +599,7 @@ function endGame(isWin){
         </div>`;
         
         htmlContent += `<div>
-            <span class="status-tag" style="color:#ff5722;"><span class="dot-fail"></span>❌ 未成功蒐集：</span>
+            <span class="status-tag" style="color:#ff5722;"><span class="dot-fail"></span>❌ 還漏失功能：</span>
             <div class="feature-pill-container">${failPills.length > 0 ? failPills.join('') : '<span style="color:#aaa; font-style:italic;">無</span>'}</div>
         </div>`;
         
