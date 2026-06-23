@@ -63,6 +63,8 @@ display:flex;align-items:center;justify-content:center; z-index:500;
 touch-action: none; cursor: grab;
 animation: ufoFloat 2s ease-in-out infinite; 
 filter: drop-shadow(0 0 calc(12px * var(--base-scale)) rgba(0, 242, 254, 0.8));
+/* 讓手動/滑鼠拖曳在超高FPS下更平滑 */
+will-change: left; 
 }
 #player:active { cursor: grabbing; }
 
@@ -84,12 +86,13 @@ filter: drop-shadow(0 0 calc(12px * var(--base-scale)) rgba(0, 242, 254, 0.8));
     50% { background: #00ffff; box-shadow: 0 0 8px #00ffff; }
 }
 
-/* 🔍 【核心修改】落下方塊大小調大、內文字體加粗加大 */
+/* 落下方塊硬體加速優化 */
 .item,.monster{
 position:absolute;
 width: calc(90px * var(--base-scale)); height: calc(90px * var(--base-scale)); 
 border-radius:16px; display:flex;flex-direction:column;align-items:center;justify-content:center; z-index:300;box-sizing:border-box;
 padding: 4px;
+will-change: transform; /* 啟動 GPU 渲染優化，保障高刷新率硬體加速 */
 }
 .item{ background:rgba(255,255,255,0.96);color:#000;border:3px solid #1976d2; box-shadow:0 6px 18px rgba(0,242,254,.6); }
 .item .icon { font-size: calc(34px * var(--base-scale)); line-height: 1.1; }
@@ -262,12 +265,15 @@ const videoElement = document.getElementById('webcam');
 
 let score=0, time=60, playerX=0;
 let gameStarted=false;
-let gameInterval, spawnInterval;
+let spawnInterval, rafId;
 let fallingObjects = [];
 let collectedFeatures = new Set();
 
-let joystickSpeed = 16; 
-let keyboardSpeed = 22; 
+// 💡 時間差計算變數 (用於跨 FPS 流暢速度控制)
+let lastTime = 0; 
+
+let joystickSpeed = 500;  // 調整為每秒移動像素
+let keyboardSpeed = 700;  // 調整為每秒移動像素
 let keysPressed = {}; 
 let isDragging = false;
 
@@ -276,7 +282,7 @@ const featureNames={"📊":"消費分析","🌱":"減碳存摺","💳":"會員�
 
 // ==================== 📐 核心動態響應式縮放引擎 ====================
 let playerWidth = 140; 
-let objWidth = 90; // 更新判定寬度
+let objWidth = 90;
 
 function resizeGame() {
     let scale = 1;
@@ -287,7 +293,7 @@ function resizeGame() {
     document.documentElement.style.setProperty('--base-scale', scale);
     
     playerWidth = 140 * scale;
-    objWidth = 90 * scale; // 保持比例縮放
+    objWidth = 90 * scale;
     
     playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
     movePlayer();
@@ -328,13 +334,13 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => { delete keysPressed[e.key]; });
 
-function handleKeyboardInput() {
+function handleKeyboardInput(dt) {
     if (!gameStarted) return;
     let moveDirection = 0;
     if (keysPressed["ArrowLeft"] || keysPressed["a"] || keysPressed["A"]) moveDirection = -1;
     if (keysPressed["ArrowRight"] || keysPressed["d"] || keysPressed["D"]) moveDirection = 1;
     if (moveDirection !== 0) {
-        playerX += moveDirection * keyboardSpeed;
+        playerX += moveDirection * keyboardSpeed * dt;
         playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
         movePlayer();
     }
@@ -400,7 +406,7 @@ function updateStatusLights(aiReady, gpReady) {
     }
 }
 
-function handleGamepadInput() {
+function handleGamepadInput(dt) {
     if (gamepadIndex === null) return;
     const gamepads = navigator.getGamepads();
     const gp = gamepads[gamepadIndex];
@@ -414,7 +420,7 @@ function handleGamepadInput() {
     else if (gp.buttons[5]?.pressed) { moveDirection = 1; }
 
     if (moveDirection !== 0) {
-        playerX += moveDirection * joystickSpeed;
+        playerX += moveDirection * joystickSpeed * dt;
         playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
         movePlayer();
     }
@@ -484,7 +490,7 @@ camera.start().then(() => {
     updateStatusLights(false, null);
 });
 
-// ==================== 核心遊戲邏輯 ====================
+// ==================== ⚡ 核心遊戲邏輯 (rAF 超流暢引擎) ====================
 function startGame(){
     initAudio();
     startScreen.style.display = "none"; endScreen.style.display = "none";
@@ -497,8 +503,7 @@ function startGame(){
     gameStarted = true;
     startBGM();
     
-    clearInterval(gameInterval); clearInterval(spawnInterval);
-    gameInterval = setInterval(updateGame, 30);
+    clearInterval(spawnInterval);
     spawnInterval = setInterval(() => {
         time--;
         timerText.textContent = time + " 秒";
@@ -506,6 +511,23 @@ function startGame(){
         if(time <= 0) { endGame(false); return; }
         if(Math.random() < 0.5) { createFeature(); } else { createMonster(); }
     }, 1000);
+
+    // 啟動 60Hz+ 頂級流暢更新迴圈
+    lastTime = performance.now();
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(timestamp) {
+    if (!gameStarted) return;
+    
+    // 計算 Delta Time (單位：秒)，防止高刷新率下物體飛太快
+    let dt = (timestamp - lastTime) / 1000;
+    if (dt > 0.1) dt = 0.1; // 防止背景標籤切換造成的瞬間大跳躍
+    lastTime = timestamp;
+
+    updateGame(dt);
+    rafId = requestAnimationFrame(gameLoop);
 }
 
 function createFeature(){
@@ -514,30 +536,40 @@ function createFeature(){
     let name = featureNames[icon];
     div.innerHTML = `<span class="icon">${icon}</span><span class="text">${name}</span>`;
     let x = Math.random() * (window.innerWidth - objWidth);
-    div.style.left = x + "px"; div.style.top = "-110px"; game.appendChild(div);
-    let speedBonus = (60 - time) * 0.05;
-    fallingObjects.push({ el: div, x: x, y: -110, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 + speedBonus });
+    div.style.left = x + "px"; 
+    div.style.transform = "translate3d(0, -110px, 0)"; // 使用 3D 加速
+    game.appendChild(div);
+    
+    let speedBonus = (60 - time) * 3; // 依時間增加的像素速度速度
+    fallingObjects.push({ el: div, x: x, y: -110, type: "good", icon: icon, name: name, speed: 180 + Math.random() * 140 + speedBonus });
 }
 
 function createMonster(){
     let div = document.createElement("div"); div.className = "monster";
     div.innerHTML = `<span class="icon">🧾</span><span class="text">紙本怪</span>`;
     let x = Math.random() * (window.innerWidth - objWidth);
-    div.style.left = x + "px"; div.style.top = "-110px"; game.appendChild(div);
-    let speedBonus = (60 - time) * 0.05;
-    fallingObjects.push({ el: div, x: x, y: -110, type: "bad", speed: 5 + Math.random() * 4 + speedBonus });
+    div.style.left = x + "px"; 
+    div.style.transform = "translate3d(0, -110px, 0)"; // 使用 3D 加速
+    game.appendChild(div);
+    
+    let speedBonus = (60 - time) * 3;
+    fallingObjects.push({ el: div, x: x, y: -110, type: "bad", speed: 220 + Math.random() * 140 + speedBonus });
 }
 
-function updateGame(){
-    handleKeyboardInput(); 
-    handleGamepadInput();  
+function updateGame(dt){
+    handleKeyboardInput(dt); 
+    handleGamepadInput(dt);  
     
     let nextObjects = [];
     let playerLeft = playerX; let playerRight = playerX + playerWidth;
     let pTop = window.innerHeight - 170;
     
     for(let i = 0; i < fallingObjects.length; i++){
-        let obj = fallingObjects[i]; obj.y += obj.speed; obj.el.style.top = obj.y + "px";
+        let obj = fallingObjects[i]; 
+        obj.y += obj.speed * dt; // 依據時間差平滑計算位置
+        
+        // 使用 translate3d 呼叫顯示卡進行物理渲染，釋放 CPU 壓力
+        obj.el.style.transform = `translate3d(0, ${obj.y}px, 0)`; 
         
         if(obj.y + objWidth >= pTop && obj.y <= window.innerHeight - 50 && obj.x + objWidth >= playerLeft && obj.x <= playerRight){
             if(obj.type === "good"){
@@ -566,7 +598,7 @@ function showTicker(txt){
 // ==================== 結束畫面 ====================
 function endGame(isWin){
     gameStarted = false; stopBGM(); isDragging = false; keysPressed = {};
-    clearInterval(gameInterval); clearInterval(spawnInterval);
+    clearInterval(spawnInterval); cancelAnimationFrame(rafId);
     document.getElementById("finalScore").textContent = score;
     const endIcon = document.getElementById("endIcon");
     const title = document.getElementById("endTitle");
@@ -592,7 +624,7 @@ function endGame(isWin){
         playWinSound();
     } else {
         endIcon.textContent = "⏰"; title.textContent = "時間到！挑戰失敗"; title.style.color = "#ff5722";
-        let htmlContent = `<div style="margin-bottom:12px; font-size:14px; text-align:center;">本次共收集了 <b style="color:#00e5ff; font-size:18px;">${collectedFeatures.size} / 8</b> 種功能：</div>`;
+        let htmlContent = `<div style="margin-bottom:12px; font-size:14px; text-align:center;">本次共收集了 <b style="color:#00e速ff; font-size:18px;">${collectedFeatures.size} / 8</b> 種功能：</div>`;
         
         htmlContent += `<div style="margin-bottom:12px;">
             <span class="status-tag" style="color:#4caf50;"><span class="dot-success"></span>👍 已成功蒐集：</span>
@@ -610,7 +642,8 @@ function endGame(isWin){
     endScreen.style.display = "flex";
 }
 
-setInterval(() => { if(!gameStarted) handleGamepadInput(); }, 50);
+// 搖桿非遊戲中選單選取用迴圈
+let menuGamepadTimer = setInterval(() => { if(!gameStarted) handleGamepadInput(0.05); }, 50);
 function restartGame(){ endScreen.style.display = "none"; startGame(); }
 </script>
 </body>
