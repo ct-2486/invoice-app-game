@@ -20,7 +20,7 @@ color: #fff; position: fixed; width: 100%; height: 100%; touch-action: none; -we
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,.02); pointer-events: none;}
 #game{position:relative;width:100vw;height:100vh;overflow:hidden;}
 
-/* 🏛️ 遊戲中背景跑馬燈浮水印（雙主辦單位強效宣導，完全不擋操作） */
+/* 🏛️ 遊戲中背景跑馬燈浮水印 */
 #gameWatermark {
     position: absolute; bottom: 30px; left: 0; width: 100%; overflow: hidden;
     white-space: nowrap; pointer-events: none; z-index: 10; opacity: 0.15;
@@ -84,19 +84,20 @@ filter: drop-shadow(0 0 calc(12px * var(--base-scale)) rgba(0, 242, 254, 0.8));
     50% { background: #00ffff; box-shadow: 0 0 8px #00ffff; }
 }
 
-/* 掉落物 RWD 比例 */
+/* 🔍 【核心修改】落下方塊大小調大、內文字體加粗加大 */
 .item,.monster{
 position:absolute;
-width: calc(75px * var(--base-scale)); height: calc(75px * var(--base-scale)); 
-border-radius:14px; display:flex;flex-direction:column;align-items:center;justify-content:center; z-index:300;box-sizing:border-box;
+width: calc(90px * var(--base-scale)); height: calc(90px * var(--base-scale)); 
+border-radius:16px; display:flex;flex-direction:column;align-items:center;justify-content:center; z-index:300;box-sizing:border-box;
+padding: 4px;
 }
-.item{ background:rgba(255,255,255,0.95);color:#000;border:2px solid #1976d2; box-shadow:0 6px 15px rgba(0,242,254,.5); }
-.item .icon { font-size: calc(26px * var(--base-scale)); }
-.item .text { font-size: calc(10px * var(--base-scale)); font-weight: bold; color: #1976d2; margin-top: 1px; text-align: center; }
+.item{ background:rgba(255,255,255,0.96);color:#000;border:3px solid #1976d2; box-shadow:0 6px 18px rgba(0,242,254,.6); }
+.item .icon { font-size: calc(34px * var(--base-scale)); line-height: 1.1; }
+.item .text { font-size: calc(13px * var(--base-scale)); font-weight: 900; color: #115293; margin-top: 3px; text-align: center; white-space: nowrap; }
 
-.monster{ background:rgba(255, 221, 221, 0.95);color:#000;border:2px solid #c62828; box-shadow:0 6px 15px rgba(255,0,0,.4); }
-.monster .icon { font-size: calc(26px * var(--base-scale)); }
-.monster .text { font-size: calc(10px * var(--base-scale)); font-weight: bold; color: #c62828; margin-top: 1px; text-align: center; }
+.monster{ background:rgba(255, 230, 230, 0.96);color:#000;border:3px solid #d32f2f; box-shadow:0 6px 18px rgba(255,0,0,.5); }
+.monster .icon { font-size: calc(34px * var(--base-scale)); line-height: 1.1; }
+.monster .text { font-size: calc(13px * var(--base-scale)); font-weight: 900; color: #c62828; margin-top: 3px; text-align: center; white-space: nowrap; }
 
 #message{
 position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);
@@ -112,7 +113,7 @@ display:flex;flex-direction:column;align-items:center;justify-content:center;
 text-align:center;color:white;padding: 20px;box-sizing: border-box;
 overflow-y: auto;
 }
-/* 🏛️ 首頁頂部雙主辦單位抬頭列 */
+/* 🏛️ 首頁頂部雙主辦單位 */
 .gov-header {
     width: 100%; max-width: 660px; margin-bottom: 15px; padding: 6px 0;
     background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
@@ -275,7 +276,7 @@ const featureNames={"📊":"消費分析","🌱":"減碳存摺","💳":"會員�
 
 // ==================== 📐 核心動態響應式縮放引擎 ====================
 let playerWidth = 140; 
-let objWidth = 75;
+let objWidth = 90; // 更新判定寬度
 
 function resizeGame() {
     let scale = 1;
@@ -286,7 +287,7 @@ function resizeGame() {
     document.documentElement.style.setProperty('--base-scale', scale);
     
     playerWidth = 140 * scale;
-    objWidth = 75 * scale;
+    objWidth = 90 * scale; // 保持比例縮放
     
     playerX = Math.max(0, Math.min(window.innerWidth - playerWidth, playerX));
     movePlayer();
@@ -295,7 +296,7 @@ window.addEventListener("resize", resizeGame);
 
 function movePlayer(){ player.style.left = playerX + "px"; }
 
-// ==================== 🛸 飛碟造型與噴射發光、閃燈特效整合 ====================
+// ==================== 🛸 飛碟造型與噴射發光 ====================
 player.innerHTML = `
     <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;">
         <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:calc(13px * var(--base-scale));color:#fff;text-shadow:0 0 8px #0ff;font-weight:bold;white-space:nowrap;">稅務飛碟</div>
@@ -513,18 +514,18 @@ function createFeature(){
     let name = featureNames[icon];
     div.innerHTML = `<span class="icon">${icon}</span><span class="text">${name}</span>`;
     let x = Math.random() * (window.innerWidth - objWidth);
-    div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
+    div.style.left = x + "px"; div.style.top = "-110px"; game.appendChild(div);
     let speedBonus = (60 - time) * 0.05;
-    fallingObjects.push({ el: div, x: x, y: -100, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 + speedBonus });
+    fallingObjects.push({ el: div, x: x, y: -110, type: "good", icon: icon, name: name, speed: 4 + Math.random() * 4 + speedBonus });
 }
 
 function createMonster(){
     let div = document.createElement("div"); div.className = "monster";
     div.innerHTML = `<span class="icon">🧾</span><span class="text">紙本怪</span>`;
     let x = Math.random() * (window.innerWidth - objWidth);
-    div.style.left = x + "px"; div.style.top = "-100px"; game.appendChild(div);
+    div.style.left = x + "px"; div.style.top = "-110px"; game.appendChild(div);
     let speedBonus = (60 - time) * 0.05;
-    fallingObjects.push({ el: div, x: x, y: -100, type: "bad", speed: 5 + Math.random() * 4 + speedBonus });
+    fallingObjects.push({ el: div, x: x, y: -110, type: "bad", speed: 5 + Math.random() * 4 + speedBonus });
 }
 
 function updateGame(){
